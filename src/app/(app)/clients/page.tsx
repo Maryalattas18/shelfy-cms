@@ -1,3 +1,5 @@
+import { getClients, createClient_ } from '@/lib/supabase'
+
 'use client'
 import { useState, useEffect } from 'react'
 import { getClients } from '@/lib/supabase'
@@ -17,13 +19,17 @@ export default function ClientsPage() {
     })
   }, [])
 
-  const save = () => {
-    if (!form.name) return alert('يرجى إدخال اسم الشركة')
-    setShowModal(false)
-    setToast(`تم إضافة العميل "${form.name}" بنجاح`)
-    setTimeout(() => setToast(''), 3000)
-    setForm({ name: '', type: 'brand', email: '', phone: '' })
-  }
+  const save = async () => {
+  if (!form.name) return alert('يرجى إدخال اسم الشركة')
+  await createClient_({ company_name: form.name, type: form.type, email: form.email, phone: form.phone })
+  const updated = await getClients()
+  setClients(updated as any[])
+  setShowModal(false)
+  setToast(`تم إضافة العميل "${form.name}" بنجاح`)
+  setTimeout(() => setToast(''), 3000)
+  setForm({ name: '', type: 'brand', email: '', phone: '' })
+}
+  
 
   return (
     <div>
