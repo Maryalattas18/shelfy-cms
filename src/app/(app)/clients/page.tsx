@@ -1,13 +1,21 @@
 'use client'
-import { useState } from 'react'
-import { mockData } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { getClients } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function ClientsPage() {
-  const [clients] = useState(mockData.clients)
+  const [clients, setClients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ name: '', type: 'brand', email: '', phone: '' })
   const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    getClients().then(data => {
+      setClients(data as any[])
+      setLoading(false)
+    })
+  }, [])
 
   const save = () => {
     if (!form.name) return alert('يرجى إدخال اسم الشركة')
@@ -27,26 +35,37 @@ export default function ClientsPage() {
           عميل جديد
         </button>
       </div>
-      <div className="card">
-        <table className="w-full">
-          <thead><tr className="bg-gray-50 border-b border-gray-100">
-            <th className="th">الشركة</th><th className="th">النوع</th><th className="th">التواصل</th><th className="th">الرصيد</th><th className="th"></th>
-          </tr></thead>
-          <tbody>
-            {clients.map((c: any) => (
-              <tr key={c.id} className="tr border-b border-gray-50">
-                <td className="td font-medium">{c.company_name}</td>
-                <td className="td"><span className={`badge ${c.type === 'brand' ? 'badge-blue' : 'badge-teal'}`}>{c.type === 'brand' ? 'شركة منتجات' : 'ميني ماركت'}</span></td>
-                <td className="td text-gray-500 text-xs">{c.email || c.phone || '—'}</td>
-                <td className="td font-medium text-green-700">{c.balance > 0 ? c.balance.toLocaleString('ar') + ' ر' : '—'}</td>
-                <td className="td">
-                  <Link href={`/clients/${c.id}`} className="btn btn-secondary text-xs py-1 px-3">عرض</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <div className="card">
+          <table className="w-full">
+            <thead><tr className="bg-gray-50 border-b border-gray-100">
+              <th className="th">الشركة</th><th className="th">النوع</th><th className="th">التواصل</th><th className="th">الرصيد</th><th className="th"></th>
+            </tr></thead>
+            <tbody>
+              {clients.length === 0 && (
+                <tr><td colSpan={5} className="text-center py-12 text-gray-400">لا يوجد عملاء بعد</td></tr>
+              )}
+              {clients.map((c: any) => (
+                <tr key={c.id} className="tr border-b border-gray-50">
+                  <td className="td font-medium">{c.company_name}</td>
+                  <td className="td"><span className={`badge ${c.type === 'brand' ? 'badge-blue' : 'badge-teal'}`}>{c.type === 'brand' ? 'شركة منتجات' : 'ميني ماركت'}</span></td>
+                  <td className="td text-gray-500 text-xs">{c.email || c.phone || '—'}</td>
+                  <td className="td font-medium text-green-700">{c.balance > 0 ? Number(c.balance).toLocaleString('ar') + ' ر' : '—'}</td>
+                  <td className="td">
+                    <Link href={`/clients/${c.id}`} className="btn btn-secondary text-xs py-1 px-3">عرض</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-5 w-full max-w-sm">
