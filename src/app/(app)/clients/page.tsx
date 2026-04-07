@@ -1,8 +1,6 @@
 'use client'
-import { getClients, createClient_ } from '@/lib/supabase'
-
 import { useState, useEffect } from 'react'
-import { getClients } from '@/lib/supabase'
+import { getClients, createClient_ } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function ClientsPage() {
@@ -20,16 +18,15 @@ export default function ClientsPage() {
   }, [])
 
   const save = async () => {
-  if (!form.name) return alert('يرجى إدخال اسم الشركة')
-  await createClient_({ company_name: form.name, type: form.type, email: form.email, phone: form.phone })
-  const updated = await getClients()
-  setClients(updated as any[])
-  setShowModal(false)
-  setToast(`تم إضافة العميل "${form.name}" بنجاح`)
-  setTimeout(() => setToast(''), 3000)
-  setForm({ name: '', type: 'brand', email: '', phone: '' })
-}
-  
+    if (!form.name) return alert('يرجى إدخال اسم الشركة')
+    await createClient_({ company_name: form.name, type: form.type, email: form.email, phone: form.phone })
+    const updated = await getClients()
+    setClients(updated as any[])
+    setShowModal(false)
+    setToast(`تم إضافة العميل "${form.name}" بنجاح`)
+    setTimeout(() => setToast(''), 3000)
+    setForm({ name: '', type: 'brand', email: '', phone: '' })
+  }
 
   return (
     <div>
@@ -50,7 +47,11 @@ export default function ClientsPage() {
         <div className="card">
           <table className="w-full">
             <thead><tr className="bg-gray-50 border-b border-gray-100">
-              <th className="th">الشركة</th><th className="th">النوع</th><th className="th">التواصل</th><th className="th">الرصيد</th><th className="th"></th>
+              <th className="th">الشركة</th>
+              <th className="th">النوع</th>
+              <th className="th">التواصل</th>
+              <th className="th">الرصيد</th>
+              <th className="th"></th>
             </tr></thead>
             <tbody>
               {clients.length === 0 && (
@@ -59,9 +60,15 @@ export default function ClientsPage() {
               {clients.map((c: any) => (
                 <tr key={c.id} className="tr border-b border-gray-50">
                   <td className="td font-medium">{c.company_name}</td>
-                  <td className="td"><span className={`badge ${c.type === 'brand' ? 'badge-blue' : 'badge-teal'}`}>{c.type === 'brand' ? 'شركة منتجات' : 'ميني ماركت'}</span></td>
+                  <td className="td">
+                    <span className={`badge ${c.type === 'brand' ? 'badge-blue' : 'badge-teal'}`}>
+                      {c.type === 'brand' ? 'شركة منتجات' : 'ميني ماركت'}
+                    </span>
+                  </td>
                   <td className="td text-gray-500 text-xs">{c.email || c.phone || '—'}</td>
-                  <td className="td font-medium text-green-700">{c.balance > 0 ? Number(c.balance).toLocaleString('ar') + ' ر' : '—'}</td>
+                  <td className="td font-medium text-green-700">
+                    {c.balance > 0 ? Number(c.balance).toLocaleString('ar') + ' ر' : '—'}
+                  </td>
                   <td className="td">
                     <Link href={`/clients/${c.id}`} className="btn btn-secondary text-xs py-1 px-3">عرض</Link>
                   </td>
@@ -80,16 +87,27 @@ export default function ClientsPage() {
               <button onClick={() => setShowModal(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <div><label className="label">اسم الشركة *</label><input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: بيبسي" /></div>
-              <div><label className="label">النوع</label>
+              <div>
+                <label className="label">اسم الشركة *</label>
+                <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: بيبسي" />
+              </div>
+              <div>
+                <label className="label">النوع</label>
                 <select className="input" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
-                  <option value="brand">شركة منتجات</option><option value="minimarket">ميني ماركت</option>
+                  <option value="brand">شركة منتجات</option>
+                  <option value="minimarket">ميني ماركت</option>
                 </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div><label className="label">البريد</label><input className="input" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@co.com" /></div>
-              <div><label className="label">الهاتف</label><input className="input" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05xxxxxxxx" /></div>
+              <div>
+                <label className="label">البريد</label>
+                <input className="input" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@co.com" />
+              </div>
+              <div>
+                <label className="label">الهاتف</label>
+                <input className="input" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05xxxxxxxx" />
+              </div>
             </div>
             <div className="flex gap-2">
               <button className="btn btn-secondary flex-1" onClick={() => setShowModal(false)}>إلغاء</button>
