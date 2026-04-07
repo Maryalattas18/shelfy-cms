@@ -1,6 +1,7 @@
-import { getClients, createClient_ } from '@/lib/supabase'
 
 'use client'
+import { getClients, createClient_ } from '@/lib/supabase'
+
 import { useState, useEffect } from 'react'
 import { getClients } from '@/lib/supabase'
 import Link from 'next/link'
