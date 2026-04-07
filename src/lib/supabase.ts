@@ -61,3 +61,17 @@ export async function getMedia() {
   const { data } = await supabase.from('media').select('*, client:clients(*)').order('created_at', { ascending: false })
   return data || mockData.media
 }
+
+
+
+export async function createClient_(client: { company_name: string, type: string, email: string, phone: string }) {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('clients')
+    .insert(client)
+    .select()
+    .single()
+  if (error) console.error(error)
+  return data
+}
+
