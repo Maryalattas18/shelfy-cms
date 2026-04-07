@@ -64,4 +64,86 @@ export async function deleteClient(id: string) {
 
 export async function getCampaigns() {
   if (!supabase) return mockData.campaigns
-  const
+  const { data } = await supabase.from('campaigns').select('*, client:clients(*)').order('created_at', { ascending: false })
+  return data || mockData.campaigns
+}
+
+export async function createCampaign(campaign: any) {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('campaigns').insert(campaign).select().single()
+  if (error) console.error(error)
+  return data
+}
+
+export async function updateCampaign(id: string, updates: any) {
+  if (!supabase) return null
+  const { data } = await supabase.from('campaigns').update(updates).eq('id', id).select().single()
+  return data
+}
+
+export async function deleteCampaign_(id: string) {
+  if (!supabase) return
+  await supabase.from('campaigns').delete().eq('id', id)
+}
+
+export async function getScreens() {
+  if (!supabase) return mockData.screens
+  const { data } = await supabase.from('screens').select('*, location:locations(*)').order('created_at', { ascending: false })
+  return data || mockData.screens
+}
+
+export async function createScreen(screen: any) {
+  if (!supabase) return null
+  const pairCode = generatePairCode()
+  const { data, error } = await supabase.from('screens').insert({ ...screen, pair_code: pairCode }).select().single()
+  if (error) console.error(error)
+  return data
+}
+
+export async function deleteScreen(id: string) {
+  if (!supabase) return
+  await supabase.from('screens').delete().eq('id', id)
+}
+
+export async function getMedia() {
+  if (!supabase) return mockData.media
+  const { data } = await supabase.from('media').select('*, client:clients(*)').order('created_at', { ascending: false })
+  return data || mockData.media
+}
+
+export async function uploadMedia(file: File, clientId: string) {
+  if (!supabase) return null
+  const fileName = `${Date.now()}_${file.name}`
+  const filePath = `media/${clientId}/${fileName}`
+  const { error: uploadError } = await supabase.storage.from('shelfy-media').upload(filePath, file)
+  if (uploadError) { console.error(uploadError); return null }
+  const { data: urlData } = supabase.storage.from('shelfy-media').getPublicUrl(filePath)
+  const fileType = file.type.startsWith('video/') ? 'video' : 'image'
+  const { data, error } = await supabase.from('media').insert({
+    client_id: clientId,
+    file_name: file.name,
+    file_url: urlData.publicUrl,
+    file_type: fileType,
+    file_size_mb: parseFloat((file.size / 1024 / 1024).toFixed(2)),
+    duration_sec: 15,
+  }).select().single()
+  if (error) console.error(error)
+  return data
+}
+
+export async function deleteMedia(id: string, fileUrl: string) {
+  if (!supabase) return
+  const path = fileUrl.split('/shelfy-media/')[1]
+  if (path) await supabase.storage.from('shelfy-media').remove([path])
+  await supabase.from('media').delete().eq('id', id)
+}
+
+function generatePairCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 7; i++) {
+    if (i === 3) code += '-'
+    else code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
