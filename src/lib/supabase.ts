@@ -44,10 +44,46 @@ export async function getClients() {
   return data || mockData.clients
 }
 
+export async function createClient_(client: { company_name: string, type: string, email: string, phone: string }) {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('clients').insert(client).select().single()
+  if (error) console.error(error)
+  return data
+}
+
+export async function updateClient(id: string, updates: any) {
+  if (!supabase) return null
+  const { data } = await supabase.from('clients').update(updates).eq('id', id).select().single()
+  return data
+}
+
+export async function deleteClient(id: string) {
+  if (!supabase) return
+  await supabase.from('clients').delete().eq('id', id)
+}
+
 export async function getCampaigns() {
   if (!supabase) return mockData.campaigns
   const { data } = await supabase.from('campaigns').select('*, client:clients(*)').order('created_at', { ascending: false })
   return data || mockData.campaigns
+}
+
+export async function createCampaign(campaign: any) {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('campaigns').insert(campaign).select().single()
+  if (error) console.error(error)
+  return data
+}
+
+export async function updateCampaign(id: string, updates: any) {
+  if (!supabase) return null
+  const { data } = await supabase.from('campaigns').update(updates).eq('id', id).select().single()
+  return data
+}
+
+export async function deleteCampaign_(id: string) {
+  if (!supabase) return
+  await supabase.from('campaigns').delete().eq('id', id)
 }
 
 export async function getScreens() {
@@ -61,17 +97,3 @@ export async function getMedia() {
   const { data } = await supabase.from('media').select('*, client:clients(*)').order('created_at', { ascending: false })
   return data || mockData.media
 }
-
-
-
-export async function createClient_(client: { company_name: string, type: string, email: string, phone: string }) {
-  if (!supabase) return null
-  const { data, error } = await supabase
-    .from('clients')
-    .insert(client)
-    .select()
-    .single()
-  if (error) console.error(error)
-  return data
-}
-
