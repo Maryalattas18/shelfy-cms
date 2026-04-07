@@ -1,3 +1,12 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+export const supabase = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey)
+  : null
+
 export const mockData = {
   stats: { screens: { total: 4, online: 2 }, campaigns: { active: 3 }, clients: { total: 5 }, plays: { thisMonth: 4832 } },
   campaigns: [
@@ -29,7 +38,26 @@ export const mockData = {
   ],
 }
 
-export const supabase = null
-export async function getData(table: string) {
-  return mockData[table as keyof typeof mockData] || []
+export async function getClients() {
+  if (!supabase) return mockData.clients
+  const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false })
+  return data || mockData.clients
+}
+
+export async function getCampaigns() {
+  if (!supabase) return mockData.campaigns
+  const { data } = await supabase.from('campaigns').select('*, client:clients(*)').order('created_at', { ascending: false })
+  return data || mockData.campaigns
+}
+
+export async function getScreens() {
+  if (!supabase) return mockData.screens
+  const { data } = await supabase.from('screens').select('*, location:locations(*)').order('created_at', { ascending: false })
+  return data || mockData.screens
+}
+
+export async function getMedia() {
+  if (!supabase) return mockData.media
+  const { data } = await supabase.from('media').select('*, client:clients(*)').order('created_at', { ascending: false })
+  return data || mockData.media
 }
