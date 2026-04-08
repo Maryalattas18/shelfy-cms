@@ -36,20 +36,34 @@ export default function NewScreenPage() {
   const save = async () => {
     if (!name || !locationName) return alert('يرجى تعبئة اسم الشاشة والموقع')
     setSaving(true)
-    const result = await createScreen({
-      name,
-      location_name: locationName,
-      pair_code: pairCode,
-      orientation: orient,
-      device_type: device,
-      status: 'offline',
-    })
-    setSaving(false)
-    if (result) {
-      alert(`تم ربط الشاشة "${name}" بنجاح!\n\nافتح هذا الرابط على الشاشة:\n${playerUrl}`)
-      router.push('/screens')
-    } else {
-      alert('حدث خطأ — تأكد من الاتصال بقاعدة البيانات')
+    try {
+      const res = await fetch('/api/db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'insert',
+          table: 'screens',
+          data: {
+            name,
+            location_name: locationName,
+            pair_code: pairCode,
+            orientation: orient,
+            device_type: device,
+            status: 'offline',
+          }
+        })
+      })
+      const json = await res.json()
+      setSaving(false)
+      if (json.error) {
+        alert(`خطأ في الحفظ:\n${json.error}`)
+      } else {
+        alert(`تم ربط الشاشة "${name}" بنجاح!\n\nافتح هذا الرابط على الشاشة:\n${playerUrl}`)
+        router.push('/screens')
+      }
+    } catch (e: any) {
+      setSaving(false)
+      alert(`خطأ في الاتصال:\n${e.message}`)
     }
   }
 
