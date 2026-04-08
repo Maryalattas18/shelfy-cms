@@ -36,13 +36,14 @@ export default function ClientsPage() {
 
   const save = async () => {
     if (!form.name) return alert('يرجى إدخال اسم الشركة')
+    let result
     if (editClient) {
-      await updateClient(editClient.id, { company_name: form.name, type: form.type, email: form.email, phone: form.phone })
-      setToast(`تم تعديل "${form.name}" بنجاح`)
+      result = await updateClient(editClient.id, { company_name: form.name, type: form.type, email: form.email, phone: form.phone })
     } else {
-      await createClient_({ company_name: form.name, type: form.type, email: form.email, phone: form.phone })
-      setToast(`تم إضافة "${form.name}" بنجاح`)
+      result = await createClient_({ company_name: form.name, type: form.type, email: form.email, phone: form.phone })
     }
+    if (!result) return alert('حدث خطأ في الحفظ — تحقق من الاتصال بقاعدة البيانات')
+    setToast(editClient ? `تم تعديل "${form.name}" بنجاح` : `تم إضافة "${form.name}" بنجاح`)
     await load()
     setShowModal(false)
     setTimeout(() => setToast(''), 3000)

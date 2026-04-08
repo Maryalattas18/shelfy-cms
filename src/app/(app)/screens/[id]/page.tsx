@@ -45,7 +45,7 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
         </button>
         <div className="flex-1">
           <h1 className="page-title">{screen.name}</h1>
-          <p className="text-sm text-gray-400">{screen.location?.name || '—'}</p>
+          <p className="text-sm text-gray-400">{screen.location_name || '—'}</p>
         </div>
         <div className="flex gap-2">
           <button className="btn btn-secondary">إعادة تشغيل</button>

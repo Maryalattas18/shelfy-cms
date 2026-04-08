@@ -49,7 +49,7 @@ export default function ScreensPage() {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{s.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{s.location?.name || '—'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{s.location_name || '—'}</p>
                   </div>
                   <span className={`badge ${badgeCls}`}>
                     <span className={`${dotCls} ml-1`}></span>{badgeLabel}

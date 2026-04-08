@@ -1,10 +1,14 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getClients, getMedia, getScreens, createCampaign } from '@/lib/supabase'
+import { getClients, getMedia, getScreens, createCampaign, createCampaignMedia, createSchedules } from '@/lib/supabase'
 
 const steps = ['المعلومات', 'المحتوى', 'الشاشات', 'الجدولة']
 const days = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
+const dayCodeMap: Record<string, string> = {
+  'الأحد': 'sun', 'الاثنين': 'mon', 'الثلاثاء': 'tue', 'الأربعاء': 'wed',
+  'الخميس': 'thu', 'الجمعة': 'fri', 'السبت': 'sat'
+}
 
 export default function NewCampaignPage() {
   const router = useRouter()
@@ -36,7 +40,7 @@ export default function NewCampaignPage() {
 
   const save = async (status: string) => {
     setSaving(true)
-    const result = await createCampaign({
+    const campaign = await createCampaign({
       name: form.name,
       client_id: form.clientId,
       status,
@@ -46,13 +50,33 @@ export default function NewCampaignPage() {
       priority: form.priority,
       notes: form.notes,
     })
-    setSaving(false)
-    if (result) {
-      alert(`تم ${status === 'active' ? 'نشر' : 'حفظ'} الحملة "${form.name}" بنجاح!`)
-      router.push('/campaigns')
-    } else {
-      alert('حدث خطأ — حاول مرة ثانية')
+
+    if (!campaign) {
+      setSaving(false)
+      return alert('حدث خطأ في إنشاء الحملة — حاول مرة ثانية')
     }
+
+    // حفظ الوسائط المختارة
+    if (selMedia.length > 0) {
+      await createCampaignMedia(campaign.id, selMedia)
+    }
+
+    // حفظ الجدولة لكل شاشة مختارة
+    if (selScreens.length > 0) {
+      const dayCodes = selDays.map(d => dayCodeMap[d]).filter(Boolean)
+      await createSchedules(
+        campaign.id,
+        selScreens,
+        timeFrom,
+        timeTo,
+        dayCodes,
+        Number(dur) || 30
+      )
+    }
+
+    setSaving(false)
+    alert(`تم ${status === 'active' ? 'نشر' : 'حفظ'} الحملة "${form.name}" بنجاح!`)
+    router.push('/campaigns')
   }
 
   const toggleMedia = (id: string) => setSelMedia(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])

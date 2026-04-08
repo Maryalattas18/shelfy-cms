@@ -38,6 +38,7 @@ export default function NewScreenPage() {
     setSaving(true)
     const result = await createScreen({
       name,
+      location_name: locationName,
       pair_code: pairCode,
       orientation: orient,
       device_type: device,
@@ -48,7 +49,7 @@ export default function NewScreenPage() {
       alert(`تم ربط الشاشة "${name}" بنجاح!\n\nافتح هذا الرابط على الشاشة:\n${playerUrl}`)
       router.push('/screens')
     } else {
-      alert('حدث خطأ — تأكد من الاتصال')
+      alert('حدث خطأ — تأكد من الاتصال بقاعدة البيانات')
     }
   }
 
@@ -115,4 +116,3 @@ export default function NewScreenPage() {
     </div>
   )
 }
-
