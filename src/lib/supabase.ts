@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey)
@@ -94,8 +94,7 @@ export async function getScreens() {
 
 export async function createScreen(screen: any) {
   if (!supabase) return null
-  const pairCode = generatePairCode()
-  const { data, error } = await supabase.from('screens').insert({ ...screen, pair_code: pairCode }).select().single()
+  const { data, error } = await supabase.from('screens').insert(screen).select().single()
   if (error) console.error(error)
   return data
 }
