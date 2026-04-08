@@ -1,12 +1,39 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { mockData } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { getClients, getCampaigns } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function ClientDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const client = mockData.clients.find(c => c.id === params.id) || mockData.clients[0]
-  const clientCampaigns = mockData.campaigns.filter((c: any) => c.client?.company_name === client.company_name)
+  const [client, setClient] = useState<any>(null)
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const [clients, camps] = await Promise.all([getClients(), getCampaigns()])
+      const found = (clients as any[]).find(c => c.id === params.id)
+      setClient(found || null)
+      const clientCamps = (camps as any[]).filter(c => c.client_id === params.id)
+      setCampaigns(clientCamps)
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) return (
+    <div className="flex justify-center py-20">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  )
+
+  if (!client) return (
+    <div className="text-center py-20 text-gray-400">
+      <p>العميل غير موجود</p>
+      <button onClick={() => router.push('/clients')} className="btn btn-secondary mt-4">رجوع</button>
+    </div>
+  )
 
   return (
     <div>
@@ -28,7 +55,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
             ['البريد', client.email || '—'],
             ['الهاتف', client.phone || '—'],
             ['النوع', client.type === 'brand' ? 'شركة منتجات' : 'ميني ماركت'],
-            ['تاريخ الانضمام', 'يناير 2025'],
+            ['تاريخ الانضمام', new Date(client.created_at).toLocaleDateString('ar-SA')],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between py-2 border-b border-gray-50 last:border-0 text-sm">
               <span className="text-gray-500">{k}</span>
@@ -41,11 +68,11 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           <div className="grid grid-cols-2 gap-3">
             <div className="stat-card">
               <p className="text-xs text-gray-500 mb-1">إجمالي الإيراد</p>
-              <p className="text-xl font-bold text-gray-900">{client.balance.toLocaleString('ar')} ر</p>
+              <p className="text-xl font-bold text-gray-900">{Number(client.balance || 0).toLocaleString('ar')} ر</p>
             </div>
             <div className="stat-card">
               <p className="text-xs text-gray-500 mb-1">عدد الحملات</p>
-              <p className="text-xl font-bold text-gray-900">{clientCampaigns.length}</p>
+              <p className="text-xl font-bold text-gray-900">{campaigns.length}</p>
             </div>
           </div>
         </div>
@@ -58,9 +85,9 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
             <th className="th">الحملة</th><th className="th">الفترة</th><th className="th">الحالة</th><th className="th">السعر</th>
           </tr></thead>
           <tbody>
-            {clientCampaigns.length === 0 ? (
+            {campaigns.length === 0 ? (
               <tr><td colSpan={4} className="text-center py-8 text-gray-400 text-sm">لا توجد حملات بعد</td></tr>
-            ) : clientCampaigns.map((c: any) => (
+            ) : campaigns.map((c: any) => (
               <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="td font-medium">{c.name}</td>
                 <td className="td text-gray-500">{c.start_date} – {c.end_date}</td>
