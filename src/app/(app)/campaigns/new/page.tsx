@@ -1,7 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { mockData } from '@/lib/supabase'
+import { getClients, getMedia, getScreens, createCampaign } from '@/lib/supabase'
 
 const steps = ['المعلومات', 'المحتوى', 'الشاشات', 'الجدولة']
 const days = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
@@ -9,24 +9,50 @@ const days = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 
 export default function NewCampaignPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState({ name: '', client: '', start: '', end: '', price: '', priority: 'normal', notes: '' })
+  const [clientsList, setClientsList] = useState<any[]>([])
+  const [mediaList, setMediaList] = useState<any[]>([])
+  const [screensList, setScreensList] = useState<any[]>([])
+  const [form, setForm] = useState({ name: '', client: '', clientId: '', start: '', end: '', price: '', priority: 'normal', notes: '' })
   const [selMedia, setSelMedia] = useState<string[]>([])
   const [selScreens, setSelScreens] = useState<string[]>([])
   const [selDays, setSelDays] = useState(['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'])
   const [timeFrom, setTimeFrom] = useState('08:00')
   const [timeTo, setTimeTo] = useState('22:00')
   const [dur, setDur] = useState('30')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    getClients().then(data => setClientsList(data as any[]))
+    getMedia().then(data => setMediaList(data as any[]))
+    getScreens().then(data => setScreensList(data as any[]))
+  }, [])
 
   const next = () => {
-    if (step === 0 && (!form.name || !form.client)) return alert('يرجى تعبئة اسم الحملة والعميل')
+    if (step === 0 && (!form.name || !form.clientId)) return alert('يرجى تعبئة اسم الحملة والعميل')
     if (step === 1 && selMedia.length === 0) return alert('يرجى اختيار ملف واحد على الأقل')
     if (step === 2 && selScreens.length === 0) return alert('يرجى اختيار شاشة واحدة على الأقل')
     if (step < 3) setStep(s => s + 1)
   }
 
-  const save = (status: string) => {
-    alert(`تم ${status === 'active' ? 'نشر' : 'حفظ'} الحملة "${form.name}" بنجاح!`)
-    router.push('/campaigns')
+  const save = async (status: string) => {
+    setSaving(true)
+    const result = await createCampaign({
+      name: form.name,
+      client_id: form.clientId,
+      status,
+      start_date: form.start || new Date().toISOString().split('T')[0],
+      end_date: form.end || new Date().toISOString().split('T')[0],
+      price: Number(form.price) || 0,
+      priority: form.priority,
+      notes: form.notes,
+    })
+    setSaving(false)
+    if (result) {
+      alert(`تم ${status === 'active' ? 'نشر' : 'حفظ'} الحملة "${form.name}" بنجاح!`)
+      router.push('/campaigns')
+    } else {
+      alert('حدث خطأ — حاول مرة ثانية')
+    }
   }
 
   const toggleMedia = (id: string) => setSelMedia(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
@@ -60,48 +86,78 @@ export default function NewCampaignPage() {
       {step === 0 && (
         <div className="card p-5">
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div><label className="label">اسم الحملة *</label><input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: رمضان 2026" /></div>
-            <div><label className="label">العميل *</label>
-              <select className="input" value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))}>
+            <div>
+              <label className="label">اسم الحملة *</label>
+              <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: رمضان 2026" />
+            </div>
+            <div>
+              <label className="label">العميل *</label>
+              <select className="input" value={form.clientId} onChange={e => {
+                const client = clientsList.find(c => c.id === e.target.value)
+                setForm(f => ({ ...f, clientId: e.target.value, client: client?.company_name || '' }))
+              }}>
                 <option value="">— اختر عميلاً —</option>
-                {mockData.clients.filter(c => c.type === 'brand').map(c => <option key={c.id}>{c.company_name}</option>)}
+                {clientsList.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
               </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div><label className="label">تاريخ البداية *</label><input className="input" type="date" value={form.start} onChange={e => setForm(f => ({ ...f, start: e.target.value }))} /></div>
-            <div><label className="label">تاريخ النهاية *</label><input className="input" type="date" value={form.end} onChange={e => setForm(f => ({ ...f, end: e.target.value }))} /></div>
+            <div>
+              <label className="label">تاريخ البداية *</label>
+              <input className="input" type="date" value={form.start} onChange={e => setForm(f => ({ ...f, start: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">تاريخ النهاية *</label>
+              <input className="input" type="date" value={form.end} onChange={e => setForm(f => ({ ...f, end: e.target.value }))} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div><label className="label">السعر (ريال)</label><input className="input" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="0" /></div>
-            <div><label className="label">الأولوية</label>
+            <div>
+              <label className="label">السعر (ريال)</label>
+              <input className="input" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="0" />
+            </div>
+            <div>
+              <label className="label">الأولوية</label>
               <select className="input" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
-                <option value="normal">عادية</option><option value="high">عالية</option><option value="urgent">طارئة</option>
+                <option value="normal">عادية</option>
+                <option value="high">عالية</option>
+                <option value="urgent">طارئة</option>
               </select>
             </div>
           </div>
-          <div className="mb-4"><label className="label">ملاحظات</label><textarea className="input" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="أي تعليمات خاصة..." /></div>
-          <div className="flex justify-end"><button className="btn btn-primary" onClick={next}>التالي: اختيار المحتوى ←</button></div>
+          <div className="mb-4">
+            <label className="label">ملاحظات</label>
+            <textarea className="input" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="أي تعليمات خاصة..." />
+          </div>
+          <div className="flex justify-end">
+            <button className="btn btn-primary" onClick={next}>التالي: اختيار المحتوى ←</button>
+          </div>
         </div>
       )}
 
       {step === 1 && (
         <div className="card p-5">
           <p className="text-sm text-gray-500 mb-4">اختر ملفاً أو أكثر من المكتبة</p>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {mockData.media.map(m => (
-              <div key={m.id} onClick={() => toggleMedia(m.id)}
-                className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${selMedia.includes(m.id) ? 'border-2 border-primary' : 'border-gray-100 hover:border-gray-300'}`}>
-                <div className="h-16 bg-gray-50 flex items-center justify-center text-xs text-gray-400">
-                  {m.file_type === 'video' ? `فيديو ${m.duration_sec} ث` : 'صورة'}
+          {mediaList.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <p>لا يوجد محتوى — <a href="/media" className="text-primary">ارفع ملفات أولاً</a></p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {mediaList.map(m => (
+                <div key={m.id} onClick={() => toggleMedia(m.id)}
+                  className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${selMedia.includes(m.id) ? 'border-2 border-primary bg-primary-light' : 'border-gray-100 hover:border-gray-300'}`}>
+                  <div className="h-16 bg-gray-50 flex items-center justify-center text-xs text-gray-400">
+                    {m.file_type === 'video' ? `🎬 ${m.duration_sec} ث` : '🖼️ صورة'}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium text-gray-900 truncate">{m.file_name}</p>
+                    <p className="text-xs text-gray-400">{m.file_size_mb} MB · {m.client?.company_name || '—'}</p>
+                  </div>
                 </div>
-                <div className="p-2">
-                  <p className="text-xs font-medium text-gray-900 truncate">{m.file_name}</p>
-                  <p className="text-xs text-gray-400">{m.file_size_mb} MB · {m.client?.company_name}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           <p className="text-xs text-gray-400 mb-4">{selMedia.length > 0 ? `تم اختيار ${selMedia.length} ملف` : 'لم يتم اختيار أي ملف'}</p>
           <div className="flex justify-between">
             <button className="btn btn-secondary" onClick={() => setStep(0)}>→ السابق</button>
@@ -114,24 +170,32 @@ export default function NewCampaignPage() {
         <div className="card p-5">
           <p className="text-sm text-gray-500 mb-3">اختر الشاشات التي ستعرض هذه الحملة</p>
           <div className="flex gap-2 mb-4">
-            <button className="btn btn-secondary text-xs" onClick={() => setSelScreens(mockData.screens.map(s => s.id))}>تحديد الكل</button>
+            <button className="btn btn-secondary text-xs" onClick={() => setSelScreens(screensList.map(s => s.id))}>تحديد الكل</button>
             <button className="btn btn-secondary text-xs" onClick={() => setSelScreens([])}>إلغاء الكل</button>
           </div>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {mockData.screens.map(s => (
-              <div key={s.id} onClick={() => toggleScreen(s.id)}
-                className={`border rounded-xl p-3 cursor-pointer transition-all ${selScreens.includes(s.id) ? 'border-2 border-primary bg-primary-light' : 'border-gray-100 hover:border-gray-300'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{s.name}</p>
-                    <p className="text-xs text-gray-400">{s.location?.name}</p>
+          {screensList.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <p>لا توجد شاشات — <a href="/screens/new" className="text-primary">أضف شاشة أولاً</a></p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {screensList.map(s => (
+                <div key={s.id} onClick={() => toggleScreen(s.id)}
+                  className={`border rounded-xl p-3 cursor-pointer transition-all ${selScreens.includes(s.id) ? 'border-2 border-primary bg-primary-light' : 'border-gray-100 hover:border-gray-300'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{s.name}</p>
+                      <p className="text-xs text-gray-400">{s.location?.name || '—'}</p>
+                    </div>
+                    <span className={`badge ${statusColors[s.status] || 'badge-gray'}`}>{statusLabels[s.status] || s.status}</span>
                   </div>
-                  <span className={`badge ${statusColors[s.status]}`}>{statusLabels[s.status]}</span>
+                  <div className="h-8 bg-gray-50 rounded-lg flex items-center justify-center text-xs text-gray-400">
+                    {s.pair_code}
+                  </div>
                 </div>
-                <div className="h-10 bg-gray-50 rounded-lg flex items-center justify-center text-xs text-gray-400">{s.last_seen}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           <p className="text-xs text-gray-400 mb-4">{selScreens.length > 0 ? `تم اختيار ${selScreens.length} شاشة` : 'لم يتم اختيار أي شاشة'}</p>
           <div className="flex justify-between">
             <button className="btn btn-secondary" onClick={() => setStep(1)}>→ السابق</button>
@@ -143,16 +207,26 @@ export default function NewCampaignPage() {
       {step === 3 && (
         <div className="card p-5">
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div><label className="label">وقت البداية</label><input className="input" type="time" value={timeFrom} onChange={e => setTimeFrom(e.target.value)} /></div>
-            <div><label className="label">وقت النهاية</label><input className="input" type="time" value={timeTo} onChange={e => setTimeTo(e.target.value)} /></div>
+            <div>
+              <label className="label">وقت البداية</label>
+              <input className="input" type="time" value={timeFrom} onChange={e => setTimeFrom(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">وقت النهاية</label>
+              <input className="input" type="time" value={timeTo} onChange={e => setTimeTo(e.target.value)} />
+            </div>
           </div>
-          <div className="mb-4"><label className="label">مدة كل إعلان (ثانية)</label><input className="input" value={dur} onChange={e => setDur(e.target.value)} /></div>
+          <div className="mb-4">
+            <label className="label">مدة كل إعلان (ثانية)</label>
+            <input className="input" value={dur} onChange={e => setDur(e.target.value)} />
+          </div>
           <div className="mb-5">
             <label className="label">أيام العرض</label>
             <div className="flex flex-wrap gap-2 mt-1">
               {days.map(d => (
                 <span key={d} onClick={() => toggleDay(d)}
-                  className={`px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all border ${selDays.includes(d) ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all border
+                    ${selDays.includes(d) ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                   {d}
                 </span>
               ))}
@@ -178,8 +252,10 @@ export default function NewCampaignPage() {
           <div className="flex justify-between">
             <button className="btn btn-secondary" onClick={() => setStep(2)}>→ السابق</button>
             <div className="flex gap-2">
-              <button className="btn btn-secondary" onClick={() => save('draft')}>حفظ كمسودة</button>
-              <button className="btn btn-primary" onClick={() => save('active')}>نشر الحملة</button>
+              <button className="btn btn-secondary" onClick={() => save('draft')} disabled={saving}>حفظ كمسودة</button>
+              <button className="btn btn-primary" onClick={() => save('active')} disabled={saving}>
+                {saving ? 'جاري الحفظ...' : 'نشر الحملة'}
+              </button>
             </div>
           </div>
         </div>
