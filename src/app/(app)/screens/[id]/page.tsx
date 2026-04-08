@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { mockData } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { getScreens } from '@/lib/supabase'
 
 const statusMap: Record<string, [string, string]> = {
   online: ['badge-green', 'متصلة'],
@@ -10,7 +11,30 @@ const statusMap: Record<string, [string, string]> = {
 
 export default function ScreenDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const screen = mockData.screens.find(s => s.id === params.id) || mockData.screens[0]
+  const [screen, setScreen] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getScreens().then(data => {
+      const found = (data as any[]).find(s => s.id === params.id)
+      setScreen(found || null)
+      setLoading(false)
+    })
+  }, [params.id])
+
+  if (loading) return (
+    <div className="flex justify-center py-20">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  )
+
+  if (!screen) return (
+    <div className="text-center py-20 text-gray-400">
+      <p>الشاشة غير موجودة</p>
+      <button onClick={() => router.push('/screens')} className="btn btn-secondary mt-4">رجوع</button>
+    </div>
+  )
+
   const [cls, label] = statusMap[screen.status] || ['badge-gray', screen.status]
 
   return (
@@ -21,7 +45,7 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
         </button>
         <div className="flex-1">
           <h1 className="page-title">{screen.name}</h1>
-          <p className="text-sm text-gray-400">{screen.location?.name}</p>
+          <p className="text-sm text-gray-400">{screen.location?.name || '—'}</p>
         </div>
         <div className="flex gap-2">
           <button className="btn btn-secondary">إعادة تشغيل</button>
@@ -34,10 +58,10 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
           <p className="section-title mb-3">معلومات الجهاز</p>
           {[
             ['الحالة', <span className={`badge ${cls}`}>{label}</span>],
-            ['آخر اتصال', screen.last_seen],
-            ['نوع الجهاز', 'Android Stick'],
-            ['الاتجاه', 'أفقي (Landscape)'],
-            ['كود الربط', <span className="font-mono text-primary text-sm">{screen.pair_code}</span>],
+            ['آخر اتصال', screen.last_seen ? new Date(screen.last_seen).toLocaleString('ar-SA') : '—'],
+            ['نوع الجهاز', screen.device_type || 'Android Stick'],
+            ['الاتجاه', screen.orientation === 'portrait' ? 'عمودي' : 'أفقي'],
+            ['كود الربط', <span className="font-mono text-primary text-sm">{screen.pair_code || '—'}</span>],
           ].map(([k, v]: any) => (
             <div key={k} className="flex justify-between py-2 border-b border-gray-50 last:border-0 text-sm">
               <span className="text-gray-500">{k}</span>
@@ -47,39 +71,15 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
         </div>
 
         <div className="card p-4">
-          <p className="section-title mb-3">يعرض الآن</p>
-          <div className="h-24 bg-gray-50 rounded-xl flex items-center justify-center text-sm text-gray-500 mb-3">
-            {screen.status === 'online' ? 'رمضان 2026 — بيبسي' : screen.status === 'idle' ? 'لا يوجد محتوى' : 'انقطع الاتصال'}
+          <p className="section-title mb-3">رابط الـ Player</p>
+          <div className="bg-primary-light rounded-xl p-3 text-center mb-3">
+            <p className="text-xl font-bold tracking-widest text-primary font-mono">{screen.pair_code}</p>
           </div>
-          <p className="text-xs text-gray-400">الحملة التالية: <span className="text-gray-700 font-medium">عروض الصيف — 12:00</span></p>
+          <div className="flex gap-2">
+            <input className="input text-xs" value={`${typeof window !== 'undefined' ? window.location.origin : ''}/player/${screen.pair_code}`} readOnly />
+            <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/player/${screen.pair_code}`)} className="btn btn-secondary text-xs flex-shrink-0">نسخ</button>
+          </div>
         </div>
-      </div>
-
-      <div className="card">
-        <div className="px-4 py-3 border-b border-gray-50"><p className="section-title">الجدولة على هذه الشاشة</p></div>
-        <table className="w-full">
-          <thead><tr className="bg-gray-50 border-b border-gray-100">
-            <th className="th">الحملة</th><th className="th">الوقت</th><th className="th">الأيام</th>
-          </tr></thead>
-          <tbody>
-            {screen.status !== 'offline' ? (
-              <>
-                <tr className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="td font-medium">رمضان 2026</td>
-                  <td className="td text-gray-600">08:00 – 22:00</td>
-                  <td className="td text-gray-600">أحد – خميس</td>
-                </tr>
-                <tr className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="td font-medium">عروض الصيف</td>
-                  <td className="td text-gray-600">12:00 – 18:00</td>
-                  <td className="td text-gray-600">يومياً</td>
-                </tr>
-              </>
-            ) : (
-              <tr><td colSpan={3} className="text-center py-8 text-gray-400 text-sm">لا توجد جدولة نشطة</td></tr>
-            )}
-          </tbody>
-        </table>
       </div>
     </div>
   )
