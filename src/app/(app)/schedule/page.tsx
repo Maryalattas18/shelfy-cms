@@ -1,17 +1,13 @@
 'use client'
-import { useState } from 'react'
-import { mockData } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { getCampaigns, getScreens } from '@/lib/supabase'
 
 const days = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
 
-const schedules = [
-  { id: '1', campaign: 'رمضان 2026', screen: 'كل الشاشات', from: '08:00', to: '22:00', days: 'أحد–خميس', dur: '30 ث' },
-  { id: '2', campaign: 'عروض الصيف', screen: 'العليا 01', from: '12:00', to: '18:00', days: 'يومياً', dur: '20 ث' },
-  { id: '3', campaign: 'منتج جديد', screen: 'النرجس 02', from: '09:00', to: '21:00', days: 'يومياً', dur: '15 ث' },
-]
-
 export default function SchedulePage() {
-  const [list, setList] = useState(schedules)
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [screens, setScreens] = useState<any[]>([])
+  const [schedules, setSchedules] = useState<any[]>([])
   const [camp, setCamp] = useState('')
   const [screen, setScreen] = useState('')
   const [from, setFrom] = useState('08:00')
@@ -20,19 +16,31 @@ export default function SchedulePage() {
   const [selDays, setSelDays] = useState(['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'])
   const [toast, setToast] = useState('')
 
+  useEffect(() => {
+    getCampaigns().then(data => setCampaigns(data as any[]))
+    getScreens().then(data => setScreens(data as any[]))
+  }, [])
+
   const toggleDay = (d: string) => setSelDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])
 
   const save = () => {
     if (!camp || !screen) return alert('يرجى اختيار الحملة والشاشة')
-    const newItem = { id: Date.now().toString(), campaign: camp, screen, from, to, days: selDays.join('، '), dur: dur + ' ث' }
-    setList(l => [...l, newItem])
+    const newItem = {
+      id: Date.now().toString(),
+      campaign: campaigns.find(c => c.id === camp)?.name || camp,
+      screen: screens.find(s => s.id === screen)?.name || screen,
+      from, to,
+      days: selDays.join('، '),
+      dur: dur + ' ث'
+    }
+    setSchedules(l => [...l, newItem])
     setCamp(''); setScreen('')
     setToast('تم حفظ الجدولة بنجاح')
     setTimeout(() => setToast(''), 3000)
   }
 
   const del = (id: string) => {
-    setList(l => l.filter(x => x.id !== id))
+    setSchedules(l => l.filter(x => x.id !== id))
     setToast('تم حذف الجدولة')
     setTimeout(() => setToast(''), 3000)
   }
@@ -51,15 +59,14 @@ export default function SchedulePage() {
             <label className="label">الحملة *</label>
             <select className="input" value={camp} onChange={e => setCamp(e.target.value)}>
               <option value="">— اختر —</option>
-              {mockData.campaigns.map((c: any) => <option key={c.id}>{c.name}</option>)}
+              {campaigns.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className="label">الشاشة *</label>
             <select className="input" value={screen} onChange={e => setScreen(e.target.value)}>
               <option value="">— اختر —</option>
-              <option>كل الشاشات</option>
-              {mockData.screens.map((s: any) => <option key={s.id}>{s.name}</option>)}
+              {screens.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
@@ -81,7 +88,7 @@ export default function SchedulePage() {
             {days.map(d => (
               <span key={d} onClick={() => toggleDay(d)}
                 className={`px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all border
-                  ${selDays.includes(d) ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                  ${selDays.includes(d) ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                 {d}
               </span>
             ))}
@@ -106,10 +113,10 @@ export default function SchedulePage() {
             </tr>
           </thead>
           <tbody>
-            {list.length === 0 && (
+            {schedules.length === 0 && (
               <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">لا توجد جدولة بعد</td></tr>
             )}
-            {list.map(s => (
+            {schedules.map(s => (
               <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="td font-medium">{s.campaign}</td>
                 <td className="td text-gray-600">{s.screen}</td>
@@ -129,3 +136,4 @@ export default function SchedulePage() {
     </div>
   )
 }
+
