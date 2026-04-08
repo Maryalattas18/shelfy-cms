@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { mockData, getClients, createCampaign } from '@/lib/supabase'
+import { getClients, getCampaigns, deleteCampaign_ } from '@/lib/supabase'
 
 const steps = ['المعلومات', 'المحتوى', 'الشاشات', 'الجدولة']
 const days = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
