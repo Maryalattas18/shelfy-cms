@@ -24,10 +24,14 @@ export async function POST(req: NextRequest) {
   const { action, table, data, id } = await req.json()
 
   if (action === 'select') {
-    const { data: rows, error } = await supabase
-      .from(table)
-      .select(data || '*')
-      .order('created_at', { ascending: false })
+    // بعض الجداول لا تملك created_at
+    const tablesWithoutCreatedAt = ['campaign_media']
+    const hasCreatedAt = !tablesWithoutCreatedAt.includes(table)
+
+    let query = supabase.from(table).select(data || '*')
+    if (hasCreatedAt) query = query.order('created_at', { ascending: false }) as any
+
+    const { data: rows, error } = await query
     if (error) {
       console.error(`[db] select ${table}:`, error.message)
       return NextResponse.json({ error: error.message }, { status: 400 })
