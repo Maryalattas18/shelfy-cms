@@ -2,6 +2,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import NotificationBell from './NotificationBell'
 
 const nav = [
   {
@@ -81,20 +82,23 @@ export default function Sidebar() {
     }}>
       {/* Logo */}
       <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid #f0f0ee' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 34, height: 34,
-            background: 'linear-gradient(135deg, #378ADD, #185FA5)',
-            borderRadius: 9, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: 'white',
-            fontSize: 15, fontWeight: 800,
-            boxShadow: '0 2px 8px rgba(55,138,221,0.35)',
-            flexShrink: 0,
-          }}>S</div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#111', lineHeight: 1.2 }}>Shelfy</div>
-            <div style={{ fontSize: 11, color: '#b0b0aa', lineHeight: 1.2 }}>إدارة الإعلانات</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 34, height: 34,
+              background: 'linear-gradient(135deg, #378ADD, #185FA5)',
+              borderRadius: 9, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', color: 'white',
+              fontSize: 15, fontWeight: 800,
+              boxShadow: '0 2px 8px rgba(55,138,221,0.35)',
+              flexShrink: 0,
+            }}>S</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#111', lineHeight: 1.2 }}>Shelfy</div>
+              <div style={{ fontSize: 11, color: '#b0b0aa', lineHeight: 1.2 }}>إدارة الإعلانات</div>
+            </div>
           </div>
+          <NotificationBell />
         </div>
       </div>
 

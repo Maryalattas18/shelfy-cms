@@ -21,6 +21,9 @@ export default function DashboardPage() {
   const date = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   useEffect(() => {
+    // تحقق من الحملات المنتهية وأنشئ إشعارات
+    fetch('/api/check-campaigns').catch(() => {})
+
     const load = async () => {
       const [c, s, cl] = await Promise.all([getCampaigns(), getScreens(), getClients()])
       const camps = c as any[]
