@@ -1,18 +1,19 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getScreens } from '@/lib/supabase'
+import { getScreens, updateScreen, deleteScreen } from '@/lib/supabase'
 
 const statusMap: Record<string, [string, string]> = {
-  online: ['badge-green', 'متصلة'],
-  offline: ['badge-red', 'غير متصلة'],
-  idle: ['badge-amber', 'خاملة'],
+  online:  ['badge-green', 'متصلة'],
+  offline: ['badge-red',   'غير متصلة'],
+  idle:    ['badge-amber', 'خاملة'],
 }
 
 export default function ScreenDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [screen, setScreen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [working, setWorking] = useState(false)
 
   useEffect(() => {
     getScreens().then(data => {
@@ -22,9 +23,24 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
     })
   }, [params.id])
 
+  const disconnect = async () => {
+    if (!confirm(`فصل الشاشة "${screen.name}"؟\nسيتوقف عرض الإعلانات عليها.`)) return
+    setWorking(true)
+    await updateScreen(screen.id, { status: 'offline', last_seen: null })
+    setScreen((s: any) => ({ ...s, status: 'offline', last_seen: null }))
+    setWorking(false)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm(`حذف الشاشة "${screen.name}" نهائياً؟\nسيُحذف كل شيء مرتبط بها.`)) return
+    setWorking(true)
+    await deleteScreen(screen.id)
+    router.push('/screens')
+  }
+
   if (loading) return (
     <div className="flex justify-center py-20">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
     </div>
   )
 
@@ -41,15 +57,29 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.push('/screens')} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-          <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
         <div className="flex-1">
           <h1 className="page-title">{screen.name}</h1>
           <p className="text-sm text-gray-400">{screen.location_name || '—'}</p>
         </div>
         <div className="flex gap-2">
-          <button className="btn btn-secondary">إعادة تشغيل</button>
-          <button className="btn btn-danger">فصل الشاشة</button>
+          {screen.status !== 'offline' && (
+            <button
+              onClick={disconnect}
+              disabled={working}
+              className="btn btn-secondary text-amber-600 border-amber-200 hover:bg-amber-50">
+              فصل الشاشة
+            </button>
+          )}
+          <button
+            onClick={handleDelete}
+            disabled={working}
+            className="btn btn-danger">
+            {working ? '...' : 'حذف الشاشة'}
+          </button>
         </div>
       </div>
 
@@ -57,10 +87,10 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
         <div className="card p-4">
           <p className="section-title mb-3">معلومات الجهاز</p>
           {[
-            ['الحالة', <span className={`badge ${cls}`}>{label}</span>],
+            ['الحالة',     <span className={`badge ${cls}`}>{label}</span>],
             ['آخر اتصال', screen.last_seen ? new Date(screen.last_seen).toLocaleString('ar-SA') : '—'],
             ['نوع الجهاز', screen.device_type || 'Android Stick'],
-            ['الاتجاه', screen.orientation === 'portrait' ? 'عمودي' : 'أفقي'],
+            ['الاتجاه',   screen.orientation === 'portrait' ? 'عمودي' : 'أفقي'],
             ['كود الربط', <span className="font-mono text-primary text-sm">{screen.pair_code || '—'}</span>],
           ].map(([k, v]: any) => (
             <div key={k} className="flex justify-between py-2 border-b border-gray-50 last:border-0 text-sm">
@@ -76,9 +106,23 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
             <p className="text-xl font-bold tracking-widest text-primary font-mono">{screen.pair_code}</p>
           </div>
           <div className="flex gap-2">
-            <input className="input text-xs" value={`${typeof window !== 'undefined' ? window.location.origin : ''}/player/${screen.pair_code}`} readOnly />
-            <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/player/${screen.pair_code}`)} className="btn btn-secondary text-xs flex-shrink-0">نسخ</button>
+            <input
+              className="input text-xs"
+              value={`${typeof window !== 'undefined' ? window.location.origin : ''}/player/${screen.pair_code}`}
+              readOnly
+            />
+            <button
+              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/player/${screen.pair_code}`)}
+              className="btn btn-secondary text-xs flex-shrink-0">
+              نسخ
+            </button>
           </div>
+          <a
+            href={`/player/${screen.pair_code}`}
+            target="_blank"
+            className="btn btn-secondary w-full text-center text-xs mt-2 block">
+            فتح Player
+          </a>
         </div>
       </div>
     </div>
