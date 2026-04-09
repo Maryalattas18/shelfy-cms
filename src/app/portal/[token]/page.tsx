@@ -97,20 +97,9 @@ export default function ClientPortalPage() {
     <div style={{ minHeight: '100vh', background: '#f7f8fa', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
 
       {/* ─── Top Bar ─────────────────────────────────── */}
-      <div style={{ background: 'white', borderBottom: '1px solid #ebebea', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36,
-            background: 'linear-gradient(135deg, #378ADD, #185FA5)',
-            borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 800, fontSize: 16,
-            boxShadow: '0 2px 8px rgba(55,138,221,0.3)',
-          }}>S</div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Shelfy Screens</div>
-            <div style={{ fontSize: 11, color: '#bbb' }}>بوابة العملاء</div>
-          </div>
+      <div style={{ background: '#0e1117', borderBottom: '1px solid #1e2433', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 48, objectFit: 'contain' }} />
         </div>
         <a
           href={`https://wa.me/966XXXXXXXXX?text=${whatsappMsg}`}
