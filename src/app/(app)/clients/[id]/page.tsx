@@ -66,6 +66,23 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
     setLogoUploading(false)
   }
 
+  const [pwModal, setPwModal] = useState(false)
+  const [newPw, setNewPw] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
+
+  const setPassword = async () => {
+    if (!newPw || newPw.length < 6) return showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+    setPwSaving(true)
+    const res = await fetch('/api/auth/set-client-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: params.id, password: newPw }),
+    })
+    setPwSaving(false)
+    if (res.ok) { setPwModal(false); setNewPw(''); showToast('تم تعيين كلمة المرور') }
+    else showToast('حدث خطأ — حاول مرة ثانية')
+  }
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
@@ -105,10 +122,32 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
         </button>
         <h1 className="page-title flex-1">بروفايل العميل</h1>
         <div className="flex gap-2">
+          <button onClick={() => setPwModal(true)} className="btn btn-secondary btn-sm">🔑 كلمة المرور</button>
           <Link href={`/clients/${client.id}/invoice`} className="btn btn-secondary btn-sm">🖨 فاتورة</Link>
           <Link href={`/campaigns/new?clientId=${client.id}`} className="btn btn-primary btn-sm">+ حملة جديدة</Link>
         </div>
       </div>
+
+      {/* ─── Password Modal ──────────────────────── */}
+      {pwModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900">تعيين كلمة مرور العميل</h3>
+              <button onClick={() => setPwModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">سيستخدم <strong>{client.company_name}</strong> هذه الكلمة لتسجيل الدخول لبوابته</p>
+            <label className="label">كلمة المرور الجديدة</label>
+            <input type="password" className="input mb-4" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="6 أحرف على الأقل" autoFocus />
+            <div className="flex gap-2">
+              <button className="btn btn-secondary flex-1" onClick={() => setPwModal(false)}>إلغاء</button>
+              <button className="btn btn-primary flex-1" onClick={setPassword} disabled={pwSaving}>
+                {pwSaving ? 'جاري الحفظ...' : 'تعيين كلمة المرور'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Profile Card ────────────────────────── */}
       <div className="card mb-5 overflow-visible">
