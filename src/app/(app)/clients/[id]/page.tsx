@@ -78,25 +78,24 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
   }
 
   const setPassword = async () => {
-    if (!pwEmail) return showToast('أدخل البريد الإلكتروني للعميل')
+    if (!pwEmail.trim()) return showToast('أدخل البريد الإلكتروني للعميل')
     if (!newPw || newPw.length < 6) return showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
     setPwSaving(true)
-    // حفظ البريد إذا تغيّر
-    if (pwEmail !== client.email) {
-      await updateClient(params.id, { email: pwEmail })
-    }
     const res = await fetch('/api/auth/set-client-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: params.id, password: newPw }),
+      body: JSON.stringify({ clientId: params.id, password: newPw, email: pwEmail.trim() }),
     })
+    const json = await res.json()
     setPwSaving(false)
     if (res.ok) {
       setPwModal(false)
       setNewPw('')
       await load()
-      showToast('تم تعيين البريد وكلمة المرور')
-    } else showToast('حدث خطأ — حاول مرة ثانية')
+      showToast('تم تعيين بيانات الدخول')
+    } else {
+      showToast(json.error || 'حدث خطأ — حاول مرة ثانية')
+    }
   }
 
   const showToast = (msg: string) => {

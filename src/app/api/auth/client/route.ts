@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await getSupabase()
     .from('clients')
     .select('portal_token, company_name, password_hash')
-    .ilike('email', email.trim())
+    .ilike('email', email.trim().toLowerCase())
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'البريد الإلكتروني غير مسجّل' }, { status: 404 })

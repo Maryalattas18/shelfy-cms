@@ -11,14 +11,20 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
-  const { clientId, password } = await req.json()
+  const { clientId, password, email } = await req.json()
   if (!clientId || !password) return NextResponse.json({ error: 'مطلوب' }, { status: 400 })
   if (password.length < 6) return NextResponse.json({ error: 'كلمة المرور قصيرة جداً' }, { status: 400 })
+  if (!email) return NextResponse.json({ error: 'البريد الإلكتروني مطلوب' }, { status: 400 })
 
+  const supabase = getSupabase()
   const hash = await hashPassword(password)
-  const { error } = await getSupabase()
+
+  const updates: any = { password_hash: hash }
+  if (email) updates.email = email.trim().toLowerCase()
+
+  const { error } = await supabase
     .from('clients')
-    .update({ password_hash: hash })
+    .update(updates)
     .eq('id', clientId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
