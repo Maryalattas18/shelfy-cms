@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
-const STATUS_AR: Record<string, [string, string]> = {
+const STATUS_AR: Record<string, [string, string, string]> = {
   active:    ['#eaf3de', '#27500a', 'نشطة'],
   draft:     ['#e6f1fb', '#0c447c', 'مسودة'],
   paused:    ['#faeeda', '#633806', 'موقوفة'],
