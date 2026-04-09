@@ -15,6 +15,8 @@ const STATUS_BADGE: Record<string, [string, string]> = {
 export default function ClientDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // ─── كل الـ state في الأعلى ───────────────────
   const [client, setClient] = useState<any>(null)
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,7 +25,15 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
   const [logoUploading, setLogoUploading] = useState(false)
   const [toast, setToast] = useState('')
   const [form, setForm] = useState({ company_name: '', type: 'brand', email: '', phone: '', website: '', internal_notes: '' })
+  const [pwModal, setPwModal] = useState(false)
+  const [pwEmail, setPwEmail] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
 
+  // ─── Effects ──────────────────────────────────
+  useEffect(() => { load() }, [params.id])
+
+  // ─── Functions ────────────────────────────────
   const load = async () => {
     const [clients, camps] = await Promise.all([getClients(), getCampaigns()])
     const found = (clients as any[]).find(c => c.id === params.id)
@@ -40,7 +50,10 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [params.id])
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
 
   const saveEdit = async () => {
     setSaving(true)
@@ -66,13 +79,8 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
     setLogoUploading(false)
   }
 
-  const [pwModal, setPwModal] = useState(false)
-  const [pwEmail, setPwEmail] = useState('')
-  const [newPw, setNewPw] = useState('')
-  const [pwSaving, setPwSaving] = useState(false)
-
   const openPwModal = () => {
-    setPwEmail(client.email || '')
+    setPwEmail(client?.email || '')
     setNewPw('')
     setPwModal(true)
   }
@@ -96,11 +104,6 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
     } else {
       showToast(json.error || 'حدث خطأ — حاول مرة ثانية')
     }
-  }
-
-  const showToast = (msg: string) => {
-    setToast(msg)
-    setTimeout(() => setToast(''), 3000)
   }
 
   if (loading) return (
