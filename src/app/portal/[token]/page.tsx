@@ -123,12 +123,21 @@ export default function ClientPortalPage() {
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '28px 16px 48px' }}>
 
         {/* ─── Welcome ──────────────────────────────── */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: '#111', marginBottom: 4 }}>
-            أهلاً، {client.company_name} 👋
-          </div>
-          <div style={{ fontSize: 14, color: '#999' }}>
-            إليك ملخص أداء حملاتك الإعلانية على شبكة شاشات Shelfy
+        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16 }}>
+          {client.logo_url ? (
+            <img src={client.logo_url} alt={client.company_name} style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', border: '1px solid #ebebea', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+          ) : (
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: 'linear-gradient(135deg, #378ADD, #185FA5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 20, fontWeight: 800, boxShadow: '0 2px 8px rgba(55,138,221,0.25)' }}>
+              {client.company_name?.[0]?.toUpperCase()}
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#111', marginBottom: 2 }}>
+              أهلاً، {client.company_name} 👋
+            </div>
+            <div style={{ fontSize: 14, color: '#999' }}>
+              إليك ملخص أداء حملاتك الإعلانية على شبكة شاشات Shelfy
+            </div>
           </div>
         </div>
 

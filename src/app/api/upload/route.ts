@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     const clientId = formData.get('clientId') as string | null
+    const purpose = formData.get('purpose') as string | null  // 'logo' | null
 
     if (!file || !clientId) {
       return NextResponse.json({ error: 'file و clientId مطلوبان' }, { status: 400 })
@@ -21,6 +22,19 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabase()
     const fileName = `${Date.now()}_${file.name}`
+
+    // رفع لوغو العميل
+    if (purpose === 'logo') {
+      const filePath = `logos/${clientId}/${fileName}`
+      const arrayBuffer = await file.arrayBuffer()
+      await supabase.storage.from('shelfy-media').upload(filePath, new Uint8Array(arrayBuffer), {
+        contentType: file.type, upsert: true,
+      })
+      const { data: urlData } = supabase.storage.from('shelfy-media').getPublicUrl(filePath)
+      await supabase.from('clients').update({ logo_url: urlData.publicUrl }).eq('id', clientId)
+      return NextResponse.json({ url: urlData.publicUrl })
+    }
+
     const filePath = `media/${clientId}/${fileName}`
 
     const arrayBuffer = await file.arrayBuffer()
