@@ -339,25 +339,6 @@ function HowItWorks() {
 
 /* ─── Client Login ────────────────────────────── */
 function ClientLogin() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const login = async () => {
-    if (!email.trim()) return setError('أدخل بريدك الإلكتروني')
-    setLoading(true)
-    setError('')
-    const res = await fetch('/api/client-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    const data = await res.json()
-    if (!res.ok) { setError(data.error); setLoading(false); return }
-    router.push(`/portal/${data.token}`)
-  }
-
   return (
     <section id="login" style={{ background: '#0e1117', padding: '80px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
@@ -368,46 +349,23 @@ function ClientLogin() {
           تابع حملاتك الإعلانية
         </h2>
         <p style={{ fontSize: 15, color: '#8899aa', marginBottom: 36, lineHeight: 1.8 }}>
-          أدخل البريد الإلكتروني المسجّل لدينا للوصول إلى تقاريرك وحملاتك
+          سجّل دخولك ببريدك الإلكتروني وكلمة المرور للوصول إلى تقاريرك وحملاتك
         </p>
 
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: 28 }}>
-          <div style={{ marginBottom: 14 }}>
-            <input
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError('') }}
-              onKeyDown={e => e.key === 'Enter' && login()}
-              placeholder="example@company.com"
-              style={{
-                width: '100%', padding: '13px 16px',
-                background: 'rgba(255,255,255,0.06)',
-                border: `1px solid ${error ? '#ef4444' : 'rgba(255,255,255,0.12)'}`,
-                borderRadius: 12, color: 'white', fontSize: 14,
-                fontFamily: 'Cairo, sans-serif', outline: 'none',
-                boxSizing: 'border-box', direction: 'ltr', textAlign: 'left',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={e => !error && (e.target.style.borderColor = '#378ADD')}
-              onBlur={e => !error && (e.target.style.borderColor = 'rgba(255,255,255,0.12)')}
-            />
-            {error && <p style={{ color: '#f87171', fontSize: 12, marginTop: 8, textAlign: 'right' }}>{error}</p>}
-          </div>
-          <button
-            onClick={login}
-            disabled={loading}
+          <a
+            href="/portal-login"
             style={{
-              width: '100%', padding: '13px',
-              background: loading ? '#334' : 'linear-gradient(135deg, #378ADD, #185FA5)',
-              border: 'none', borderRadius: 12, color: 'white',
-              fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'Cairo, sans-serif',
-              boxShadow: loading ? 'none' : '0 4px 20px rgba(55,138,221,0.4)',
-              transition: 'all 0.15s',
+              display: 'block', width: '100%', padding: '14px',
+              background: 'linear-gradient(135deg, #378ADD, #185FA5)',
+              borderRadius: 12, color: 'white', textDecoration: 'none',
+              fontSize: 15, fontWeight: 700,
+              boxShadow: '0 4px 20px rgba(55,138,221,0.4)',
+              marginBottom: 16,
             }}
           >
-            {loading ? 'جاري البحث...' : 'دخول إلى بوابتي'}
-          </button>
+            دخول إلى بوابتي
+          </a>
           <p style={{ fontSize: 12, color: '#555', marginTop: 16 }}>
             لا يوجد لديك حساب؟{' '}
             <a href={`https://wa.me/966XXXXXXXXX`} target="_blank" rel="noopener noreferrer" style={{ color: '#378ADD', textDecoration: 'none' }}>
