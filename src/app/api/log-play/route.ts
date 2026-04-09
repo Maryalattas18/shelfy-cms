@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
 
 export async function POST(req: NextRequest) {
   const { screenId, mediaId, duration } = await req.json()
   if (!screenId || !mediaId) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
-  await supabase.from('play_logs').insert({
+  await getSupabase().from('play_logs').insert({
     screen_id: screenId,
     media_id: mediaId,
     duration_sec: duration,
@@ -19,4 +22,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true })
 }
-
