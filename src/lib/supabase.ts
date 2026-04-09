@@ -1,8 +1,8 @@
-async function db(action: string, table: string, data?: any, id?: string): Promise<any> {
+async function db(action: string, table: string, data?: any, id?: string, filter?: any): Promise<any> {
   const res = await fetch('/api/db', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, table, data, id })
+    body: JSON.stringify({ action, table, data, id, filter })
   })
   const json = await res.json()
   if (json.error) {
@@ -10,6 +10,36 @@ async function db(action: string, table: string, data?: any, id?: string): Promi
     return null
   }
   return json.data
+}
+
+export async function getCampaignMedia(campaignId: string) {
+  const res = await fetch('/api/db', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'select',
+      table: 'campaign_media',
+      data: '*, media(id,file_name,file_url,file_type,duration_sec,file_size_mb)',
+      filter: { campaign_id: campaignId }
+    })
+  })
+  const json = await res.json()
+  return json.data || []
+}
+
+export async function getCampaignSchedules(campaignId: string) {
+  const res = await fetch('/api/db', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'select',
+      table: 'schedules',
+      data: '*, screen:screens(id,name,location_name,status)',
+      filter: { campaign_id: campaignId }
+    })
+  })
+  const json = await res.json()
+  return json.data || []
 }
 
 // ─── Clients ───────────────────────────────────────────────
