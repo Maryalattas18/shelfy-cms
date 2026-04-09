@@ -125,33 +125,30 @@ export async function getMedia() {
 }
 
 export async function uploadMedia(file: File, clientId: string) {
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const fileName = `${Date.now()}_${file.name}`
-  const filePath = `media/${clientId}/${fileName}`
-  const { error: uploadError } = await supabase.storage.from('shelfy-media').upload(filePath, file)
-  if (uploadError) { console.error(uploadError); return null }
-  const { data: urlData } = supabase.storage.from('shelfy-media').getPublicUrl(filePath)
-  return await db('insert', 'media', {
-    client_id: clientId,
-    file_name: file.name,
-    file_url: urlData.publicUrl,
-    file_type: file.type.startsWith('video/') ? 'video' : 'image',
-    file_size_mb: parseFloat((file.size / 1024 / 1024).toFixed(2)),
-    duration_sec: 15,
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('clientId', clientId)
+
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
   })
+  const json = await res.json()
+  if (json.error) {
+    console.error('[uploadMedia]', json.error)
+    return null
+  }
+  return json.data
 }
 
 export async function deleteMedia(id: string, fileUrl: string) {
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   const path = fileUrl.split('/shelfy-media/')[1]
-  if (path) await supabase.storage.from('shelfy-media').remove([path])
+  if (path) {
+    await fetch('/api/upload', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path }),
+    })
+  }
   return await db('delete', 'media', null, id)
 }
