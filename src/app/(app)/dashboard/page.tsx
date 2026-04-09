@@ -16,25 +16,30 @@ const statusMap: Record<string, [string, string]> = {
 export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [screens, setScreens] = useState<any[]>([])
-  const [stats, setStats] = useState({ screens: { total: 0, online: 0 }, campaigns: { active: 0 }, clients: { total: 0 } })
+  const [stats, setStats] = useState({ screens: { total: 0, online: 0 }, campaigns: { active: 0 }, clients: { total: 0 }, monthlyPlays: 0 })
   const [loading, setLoading] = useState(true)
   const date = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   useEffect(() => {
-    // تحقق من الحملات المنتهية وأنشئ إشعارات
     fetch('/api/check-campaigns').catch(() => {})
 
     const load = async () => {
-      const [c, s, cl] = await Promise.all([getCampaigns(), getScreens(), getClients()])
+      const [c, s, cl, dashStats] = await Promise.all([
+        getCampaigns(),
+        getScreens(),
+        getClients(),
+        fetch('/api/stats?type=dashboard').then(r => r.json()).catch(() => ({})),
+      ])
       const camps = c as any[]
       const scrns = s as any[]
       const clients = cl as any[]
       setCampaigns(camps.slice(0, 4))
       setScreens(scrns.slice(0, 4))
       setStats({
-        screens: { total: scrns.length, online: scrns.filter(s => s.status === 'online').length },
-        campaigns: { active: camps.filter(c => c.status === 'active').length },
+        screens: { total: scrns.length, online: scrns.filter((s: any) => s.status === 'online').length },
+        campaigns: { active: camps.filter((c: any) => c.status === 'active').length },
         clients: { total: clients.length },
+        monthlyPlays: dashStats.monthlyPlays || 0,
       })
       setLoading(false)
     }
@@ -59,7 +64,7 @@ export default function DashboardPage() {
           { label: 'الشاشات النشطة', value: `${stats.screens.online}/${stats.screens.total}`, sub: 'شاشة متصلة' },
           { label: 'الحملات الجارية', value: stats.campaigns.active, sub: 'حملة نشطة' },
           { label: 'العملاء', value: stats.clients.total, sub: 'عميل مسجل' },
-          { label: 'عروض هذا الشهر', value: '—', sub: 'مرة عرض' },
+          { label: 'عروض هذا الشهر', value: stats.monthlyPlays.toLocaleString('ar-SA'), sub: 'مرة عرض' },
         ].map((s, i) => (
           <div key={i} className="stat-card">
             <p className="text-xs text-gray-500 mb-1">{s.label}</p>

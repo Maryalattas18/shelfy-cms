@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getClients, getMedia, getScreens, createCampaign, createCampaignMedia, createSchedules } from '@/lib/supabase'
 
 const steps = ['المعلومات', 'المحتوى', 'الشاشات', 'الجدولة']
@@ -12,11 +12,14 @@ const dayCodeMap: Record<string, string> = {
 
 export default function NewCampaignPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedClientId = searchParams.get('clientId') || ''
+
   const [step, setStep] = useState(0)
   const [clientsList, setClientsList] = useState<any[]>([])
   const [mediaList, setMediaList] = useState<any[]>([])
   const [screensList, setScreensList] = useState<any[]>([])
-  const [form, setForm] = useState({ name: '', client: '', clientId: '', start: '', end: '', price: '', priority: 'normal', notes: '' })
+  const [form, setForm] = useState({ name: '', client: '', clientId: preselectedClientId, start: '', end: '', price: '', priority: 'normal', notes: '' })
   const [selMedia, setSelMedia] = useState<string[]>([])
   const [selScreens, setSelScreens] = useState<string[]>([])
   const [selDays, setSelDays] = useState(['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'])
@@ -26,9 +29,17 @@ export default function NewCampaignPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    getClients().then(data => setClientsList(data as any[]))
-    getMedia().then(data => setMediaList(data as any[]))
-    getScreens().then(data => setScreensList(data as any[]))
+    Promise.all([getClients(), getMedia(), getScreens()]).then(([clients, media, screens]) => {
+      const c = clients as any[]
+      setClientsList(c)
+      setMediaList(media as any[])
+      setScreensList(screens as any[])
+      // اسم العميل المحدد مسبقاً
+      if (preselectedClientId) {
+        const found = c.find(x => x.id === preselectedClientId)
+        if (found) setForm(f => ({ ...f, clientId: preselectedClientId, client: found.company_name }))
+      }
+    })
   }, [])
 
   const next = () => {

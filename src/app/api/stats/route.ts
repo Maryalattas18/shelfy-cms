@@ -130,5 +130,28 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // ─── إحصائيات الداشبورد ───────────────────────────
+  if (type === 'dashboard') {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+    const [
+      { data: monthLogs },
+      { data: allCampaigns },
+      { data: allScreens },
+    ] = await Promise.all([
+      supabase.from('play_logs').select('id').gte('played_at', monthStart),
+      supabase.from('campaigns').select('id, status'),
+      supabase.from('screens').select('id, status'),
+    ])
+
+    return NextResponse.json({
+      monthlyPlays: (monthLogs || []).length,
+      activeCampaigns: (allCampaigns || []).filter((c: any) => c.status === 'active').length,
+      totalScreens: (allScreens || []).length,
+      onlineScreens: (allScreens || []).filter((s: any) => s.status === 'online').length,
+    })
+  }
+
   return NextResponse.json({ error: 'type غير معروف' }, { status: 400 })
 }

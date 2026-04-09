@@ -45,7 +45,10 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
           <h1 className="page-title">{client.company_name}</h1>
           <p className="text-sm text-gray-400">{client.type === 'brand' ? 'شركة منتجات' : 'ميني ماركت'}</p>
         </div>
-        <Link href="/campaigns/new" className="btn btn-primary">+ حملة جديدة</Link>
+        <div className="flex gap-2">
+          <Link href={`/clients/${client.id}/invoice`} className="btn btn-secondary">🖨 فاتورة PDF</Link>
+          <Link href={`/campaigns/new?clientId=${client.id}`} className="btn btn-primary">+ حملة جديدة</Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
