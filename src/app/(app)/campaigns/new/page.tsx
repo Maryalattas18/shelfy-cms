@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getClients, getMedia, getScreens, createCampaign, createCampaignMedia, createSchedules } from '@/lib/supabase'
 
@@ -11,6 +11,14 @@ const dayCodeMap: Record<string, string> = {
 }
 
 export default function NewCampaignPage() {
+  return (
+    <Suspense>
+      <NewCampaignForm />
+    </Suspense>
+  )
+}
+
+function NewCampaignForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedClientId = searchParams.get('clientId') || ''
