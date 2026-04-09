@@ -89,11 +89,26 @@ export async function getSchedules() {
     body: JSON.stringify({
       action: 'select',
       table: 'schedules',
-      data: '*, campaign:campaigns(*), screen:screens(*)'
+      data: '*, campaign:campaigns(id,name,status), screen:screens(id,name,location_name)'
     })
   })
   const json = await res.json()
   return json.data || []
+}
+
+export async function createSchedule(schedule: {
+  campaign_id: string
+  screen_id: string
+  start_time: string
+  end_time: string
+  days_of_week: string[]
+  duration_sec: number
+}) {
+  return await db('insert', 'schedules', schedule)
+}
+
+export async function deleteSchedule(id: string) {
+  return await db('delete', 'schedules', null, id)
 }
 
 // ─── Screens ────────────────────────────────────────────────
