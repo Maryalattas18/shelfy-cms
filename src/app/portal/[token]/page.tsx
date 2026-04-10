@@ -293,30 +293,32 @@ export default function ClientPortalPage() {
                 const [bg, fg, label] = STATUS_AR[c.status] || ['#f1efe8', '#5f5e5a', c.status]
                 const isActive = c.status === 'active'
                 return (
-                  <div key={c.id} style={{
-                    border: `1px solid ${isActive ? '#b8e0a0' : '#ebebea'}`,
-                    background: isActive ? '#f8fdf5' : '#fafaf8',
-                    borderRadius: 12, padding: '14px 16px',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{c.name}</span>
-                        <span style={{ background: bg, color: fg, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600 }}>{label}</span>
+                  <div key={c.id}>
+                    <div style={{
+                      border: `1px solid ${isActive ? '#b8e0a0' : '#ebebea'}`,
+                      background: isActive ? '#f8fdf5' : '#fafaf8',
+                      borderRadius: 12, padding: '14px 16px',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{c.name}</span>
+                          <span style={{ background: bg, color: fg, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600 }}>{label}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#aaa' }}>
+                          {c.start_date} — {c.end_date}
+                          {c.price > 0 && <span style={{ marginRight: 12, color: '#888' }}>· {Number(c.price).toLocaleString('ar-SA')} ر.س</span>}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 12, color: '#aaa' }}>
-                        {c.start_date} — {c.end_date}
-                        {c.price > 0 && <span style={{ marginRight: 12, color: '#888' }}>· {Number(c.price).toLocaleString('ar-SA')} ر.س</span>}
-                      </div>
+                      {c.plays > 0 && (
+                        <div style={{ textAlign: 'center', marginRight: 16 }}>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: '#378ADD' }}>{c.plays.toLocaleString('ar-SA')}</div>
+                          <div style={{ fontSize: 10, color: '#bbb' }}>مرة عرض</div>
+                        </div>
+                      )}
                     </div>
-                    {c.plays > 0 && (
-                      <div style={{ textAlign: 'center', marginRight: 16 }}>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: '#378ADD' }}>{c.plays.toLocaleString('ar-SA')}</div>
-                        <div style={{ fontSize: 10, color: '#bbb' }}>مرة عرض</div>
-                      </div>
-                    )}
+                    {c.status === 'ended' && <StarRating campaignId={c.id} />}
                   </div>
-                  {c.status === 'ended' && <StarRating campaignId={c.id} />}
                 )
               })}
             </div>
