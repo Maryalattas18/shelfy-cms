@@ -4,21 +4,30 @@ import Link from 'next/link'
 import {
   Store, Clock, Eye, Star, Target, Zap, BarChart2,
   Sparkles, Rocket, Smartphone, Users, ClipboardList,
-  TrendingUp, Megaphone, Monitor, Globe, Award,
-  CheckCircle, ArrowLeft, MapPin, MessageCircle, Mail,
+  TrendingUp, Megaphone, Monitor, Award,
+  CheckCircle, ArrowLeft, MapPin, MessageCircle, Mail, Menu, X,
 } from 'lucide-react'
 
-/* ─── count-up hook ───────────────────────────── */
+/* ─── hooks ───────────────────────────────────── */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isMobile
+}
+
 function useCountUp(target: number, started: boolean) {
   const [v, setV] = useState(0)
   useEffect(() => {
     if (!started) return
-    let n = 0
-    const step = target / 60
+    let n = 0; const step = target / 60
     const t = setInterval(() => {
       n += step
-      if (n >= target) { setV(target); clearInterval(t) }
-      else setV(Math.floor(n))
+      if (n >= target) { setV(target); clearInterval(t) } else setV(Math.floor(n))
     }, 20)
     return () => clearInterval(t)
   }, [target, started])
@@ -28,7 +37,7 @@ function useCountUp(target: number, started: boolean) {
 function useVisible(ref: React.RefObject<HTMLElement>) {
   const [vis, setVis] = useState(false)
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVis(true) }, { threshold: 0.2 })
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVis(true) }, { threshold: 0.15 })
     if (ref.current) obs.observe(ref.current)
     return () => obs.disconnect()
   }, [])
@@ -39,25 +48,13 @@ function useVisible(ref: React.RefObject<HTMLElement>) {
 function Screen({ label, active, gradient, children }: { label: string; active: boolean; gradient: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* إطار الشاشة */}
-      <div style={{
-        background: '#0d1117',
-        border: '2px solid rgba(255,255,255,0.08)',
-        borderRadius: 14,
-        overflow: 'hidden',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}>
-        {/* شريط علوي */}
+      <div style={{ background: '#0d1117', border: '2px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden' }}>
         <div style={{ background: '#0a0d12', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#22c55e' : '#374151' }} />
           <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 2 }} />
         </div>
-        {/* محتوى الشاشة */}
-        <div style={{ background: gradient, minHeight: 90 }}>
-          {children}
-        </div>
+        <div style={{ background: gradient, minHeight: 90 }}>{children}</div>
       </div>
-      {/* تسمية */}
       <p style={{ fontSize: 9, color: '#2a3040', textAlign: 'center', margin: 0 }}>{label}</p>
     </div>
   )
@@ -66,172 +63,153 @@ function Screen({ label, active, gradient, children }: { label: string; active: 
 /* ─── Navbar ──────────────────────────────────── */
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const isMobile = useIsMobile()
+
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', h)
     return () => window.removeEventListener('scroll', h)
   }, [])
+
   return (
-    <nav style={{
-      position: 'fixed', top: 0, right: 0, left: 0, zIndex: 100,
-      background: scrolled ? 'rgba(14,17,23,0.96)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(16px)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-      transition: 'all 0.3s',
-      padding: '14px 5%',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      fontFamily: 'Cairo, sans-serif', direction: 'rtl',
-    }}>
-      <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 40, objectFit: 'contain' }} />
-      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-        {[['من نحن','#about'],['الخدمات','#services'],['كيف يعمل','#how']].map(([label, href]) => (
-          <a key={label} href={href} style={{ color: '#bbb', textDecoration: 'none', fontSize: 14, padding: '8px 14px', borderRadius: 8, transition: 'color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#bbb')}>{label}</a>
-        ))}
-        <a href="#start" style={{
-          background: 'linear-gradient(135deg, #378ADD, #185FA5)',
-          color: 'white', textDecoration: 'none', fontSize: 13, fontWeight: 700,
-          padding: '9px 20px', borderRadius: 10, marginRight: 8,
-          boxShadow: '0 2px 12px rgba(55,138,221,0.4)',
-        }}>ابدأ حملتك</a>
-        <a href="/portal-login" style={{ color: '#666', textDecoration: 'none', fontSize: 13, padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
-          دخول العملاء
-        </a>
-      </div>
-    </nav>
+    <>
+      <nav style={{
+        position: 'fixed', top: 0, right: 0, left: 0, zIndex: 100,
+        background: scrolled || menuOpen ? 'rgba(14,17,23,0.97)' : 'transparent',
+        backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
+        borderBottom: scrolled || menuOpen ? '1px solid rgba(255,255,255,0.06)' : 'none',
+        transition: 'all 0.3s', padding: '14px 5%',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        fontFamily: 'Cairo, sans-serif', direction: 'rtl',
+      }}>
+        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 38, objectFit: 'contain' }} />
+
+        {isMobile ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <a href="#start" style={{ background: 'linear-gradient(135deg, #378ADD, #185FA5)', color: 'white', textDecoration: 'none', fontSize: 13, fontWeight: 700, padding: '8px 16px', borderRadius: 10 }}>
+              ابدأ
+            </a>
+            <button onClick={() => setMenuOpen(m => !m)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }}>
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {[['من نحن','#about'],['الخدمات','#services'],['كيف يعمل','#how']].map(([label, href]) => (
+              <a key={label} href={href} style={{ color: '#bbb', textDecoration: 'none', fontSize: 14, padding: '8px 14px', borderRadius: 8, transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#bbb')}>{label}</a>
+            ))}
+            <a href="#start" style={{ background: 'linear-gradient(135deg, #378ADD, #185FA5)', color: 'white', textDecoration: 'none', fontSize: 13, fontWeight: 700, padding: '9px 20px', borderRadius: 10, marginRight: 8, boxShadow: '0 2px 12px rgba(55,138,221,0.4)' }}>ابدأ حملتك</a>
+            <a href="/portal-login" style={{ color: '#666', textDecoration: 'none', fontSize: 13, padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}>دخول العملاء</a>
+          </div>
+        )}
+      </nav>
+
+      {/* Mobile Menu */}
+      {isMobile && menuOpen && (
+        <div style={{ position: 'fixed', top: 66, right: 0, left: 0, zIndex: 99, background: 'rgba(14,17,23,0.97)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '16px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
+          {[['من نحن','#about'],['الخدمات','#services'],['كيف يعمل','#how'],['دخول العملاء','/portal-login']].map(([label, href]) => (
+            <a key={label} href={href} onClick={() => setMenuOpen(false)}
+              style={{ display: 'block', color: '#ccc', textDecoration: 'none', fontSize: 15, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{label}</a>
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 
 /* ─── Hero ────────────────────────────────────── */
 function Hero() {
+  const isMobile = useIsMobile()
   return (
     <section style={{
       minHeight: '100vh', background: '#0e1117',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      textAlign: 'center', padding: '120px 5% 80px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      textAlign: 'center', padding: isMobile ? '100px 5% 60px' : '120px 5% 80px',
       position: 'relative', overflow: 'hidden',
       fontFamily: 'Cairo, sans-serif', direction: 'rtl',
     }}>
-      <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: 700, height: 700, background: 'radial-gradient(circle, rgba(55,138,221,0.13) 0%, transparent 65%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, background: 'radial-gradient(circle, rgba(0,201,167,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '20%', left: '5%', width: 300, height: 300, background: 'radial-gradient(circle, rgba(167,139,250,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: isMobile ? 400 : 700, height: isMobile ? 400 : 700, background: 'radial-gradient(circle, rgba(55,138,221,0.13) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 8,
-        background: 'rgba(55,138,221,0.1)', border: '1px solid rgba(55,138,221,0.22)',
-        borderRadius: 999, padding: '7px 18px', marginBottom: 32,
-        fontSize: 12, color: '#7ec8f5', fontWeight: 600,
-      }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(55,138,221,0.1)', border: '1px solid rgba(55,138,221,0.22)', borderRadius: 999, padding: '7px 16px', marginBottom: 28, fontSize: isMobile ? 11 : 12, color: '#7ec8f5', fontWeight: 600 }}>
         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-        الشبكة الإعلانية الرقمية الأولى داخل الميني ماركت في المملكة
+        {isMobile ? 'شبكة إعلانات رقمية في المملكة' : 'الشبكة الإعلانية الرقمية الأولى داخل الميني ماركت في المملكة'}
       </div>
 
-      <h1 style={{
-        fontSize: 'clamp(38px, 6.5vw, 76px)', fontWeight: 900,
-        color: 'white', lineHeight: 1.1, marginBottom: 24, maxWidth: 820,
-        letterSpacing: '-0.025em',
-      }}>
+      <h1 style={{ fontSize: isMobile ? 36 : 'clamp(38px, 6.5vw, 76px)', fontWeight: 900, color: 'white', lineHeight: 1.15, marginBottom: 20, maxWidth: 820, letterSpacing: '-0.025em' }}>
         وصّل إعلانك لكل{' '}
         <span style={{ background: 'linear-gradient(135deg, #378ADD, #00c9a7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           عميل في السعودية
         </span>
       </h1>
 
-      <p style={{ fontSize: 18, color: '#7788a0', lineHeight: 1.9, maxWidth: 560, marginBottom: 44 }}>
-        شاشاتنا الرقمية داخل الميني ماركت تضع إعلانك أمام المستهلك في لحظة القرار — في المكان الصحيح، في الوقت الصحيح
+      <p style={{ fontSize: isMobile ? 15 : 18, color: '#7788a0', lineHeight: 1.9, maxWidth: 560, marginBottom: 40 }}>
+        شاشاتنا الرقمية داخل الميني ماركت تضع إعلانك أمام المستهلك في لحظة القرار
       </p>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: isMobile ? 320 : 'none' }}>
         <a href="#start" style={{
-          background: 'linear-gradient(135deg, #378ADD, #185FA5)',
-          color: 'white', textDecoration: 'none',
-          padding: '15px 36px', borderRadius: 12, fontSize: 16, fontWeight: 700,
+          background: 'linear-gradient(135deg, #378ADD, #185FA5)', color: 'white', textDecoration: 'none',
+          padding: isMobile ? '13px 28px' : '15px 36px', borderRadius: 12, fontSize: isMobile ? 15 : 16, fontWeight: 700,
           boxShadow: '0 4px 28px rgba(55,138,221,0.45)',
           display: 'inline-flex', alignItems: 'center', gap: 10,
-          transition: 'transform 0.15s, box-shadow 0.15s',
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 10px 36px rgba(55,138,221,0.55)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 28px rgba(55,138,221,0.45)' }}
-        >
-          ابدأ حملتك الإعلانية
-          <ArrowLeft size={18} />
+          width: isMobile ? '100%' : 'auto', justifyContent: 'center',
+        }}>
+          ابدأ حملتك الإعلانية <ArrowLeft size={18} />
         </a>
         <a href="#how" style={{
           background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
           color: '#ccc', textDecoration: 'none',
-          padding: '15px 32px', borderRadius: 12, fontSize: 15, fontWeight: 600,
-          transition: 'all 0.15s',
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.09)'; (e.currentTarget as HTMLAnchorElement).style.color = '#fff' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLAnchorElement).style.color = '#ccc' }}
-        >
+          padding: isMobile ? '13px 28px' : '15px 32px', borderRadius: 12, fontSize: 15, fontWeight: 600,
+          width: isMobile ? '100%' : 'auto', textAlign: 'center',
+        }}>
           كيف يعمل النظام؟
         </a>
       </div>
 
       {/* Screens Mockup */}
-      <div style={{ marginTop: 70, position: 'relative', maxWidth: 760, width: '100%' }}>
-
-        {/* شريط الرف */}
-        <div style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 24, padding: '28px 28px 20px',
-          boxShadow: '0 40px 100px rgba(0,0,0,0.55)',
-        }}>
-
-          {/* تسمية */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+      <div style={{ marginTop: 60, position: 'relative', maxWidth: isMobile ? 340 : 760, width: '100%' }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: isMobile ? '20px 16px 16px' : '28px 28px 20px', boxShadow: '0 40px 100px rgba(0,0,0,0.55)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: 12, color: '#4ade80', fontWeight: 600 }}>شاشات نشطة الآن</span>
+            <span style={{ fontSize: 11, color: '#4ade80', fontWeight: 600 }}>شاشات نشطة الآن</span>
             <div style={{ flex: 1 }} />
-            <span style={{ fontSize: 11, color: '#2a3040' }}>Shelfy Network</span>
+            <span style={{ fontSize: 10, color: '#2a3040' }}>Shelfy Network</span>
           </div>
-
-          {/* شبكة الشاشات */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: isMobile ? 8 : 14 }}>
             <Screen label="شاشة منطقة الدفع" active gradient="linear-gradient(160deg, #1a0533 0%, #6d28d9 100%)">
-              <div style={{ textAlign: 'center', padding: '24px 8px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Monitor size={20} color="white" />
+              <div style={{ textAlign: 'center', padding: isMobile ? '16px 6px' : '24px 8px' }}>
+                <div style={{ width: isMobile ? 30 : 40, height: isMobile ? 30 : 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Monitor size={isMobile ? 14 : 20} color="white" />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>إعلانك</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>عند الدفع</div>
+                <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 800, color: 'white' }}>إعلانك</div>
+                <div style={{ fontSize: isMobile ? 9 : 11, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>عند الدفع</div>
               </div>
             </Screen>
-
             <Screen label="شاشة رف المنتجات" active gradient="linear-gradient(160deg, #052e16 0%, #16a34a 100%)">
-              <div style={{ textAlign: 'center', padding: '24px 8px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Target size={20} color="white" />
+              <div style={{ textAlign: 'center', padding: isMobile ? '16px 6px' : '24px 8px' }}>
+                <div style={{ width: isMobile ? 30 : 40, height: isMobile ? 30 : 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Target size={isMobile ? 14 : 20} color="white" />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>استهدف</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>بدقة</div>
+                <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 800, color: 'white' }}>استهدف</div>
+                <div style={{ fontSize: isMobile ? 9 : 11, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>بدقة</div>
               </div>
             </Screen>
-
             <Screen label="شاشة المدخل" active gradient="linear-gradient(160deg, #1c1404 0%, #d97706 100%)">
-              <div style={{ textAlign: 'center', padding: '24px 8px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingUp size={20} color="white" />
+              <div style={{ textAlign: 'center', padding: isMobile ? '16px 6px' : '24px 8px' }}>
+                <div style={{ width: isMobile ? 30 : 40, height: isMobile ? 30 : 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <TrendingUp size={isMobile ? 14 : 20} color="white" />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>نمو</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>مستمر</div>
+                <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 800, color: 'white' }}>نمو</div>
+                <div style={{ fontSize: isMobile ? 9 : 11, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>مستمر</div>
               </div>
             </Screen>
-
           </div>
-
-
         </div>
       </div>
-
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-      `}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }`}</style>
     </section>
   )
 }
@@ -240,37 +218,28 @@ function Hero() {
 function Stats() {
   const ref = useRef<HTMLElement>(null!)
   const vis = useVisible(ref)
-  const s1 = useCountUp(50, vis)
-  const s2 = useCountUp(16, vis)
-  const s3 = useCountUp(1500000, vis)
-  const s4 = useCountUp(98, vis)
+  const isMobile = useIsMobile()
+  const s1 = useCountUp(50, vis), s2 = useCountUp(16, vis)
+  const s3 = useCountUp(1500000, vis), s4 = useCountUp(98, vis)
 
   return (
-    <section ref={ref} style={{ background: '#f7f8fa', padding: '72px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
+    <section ref={ref} style={{ background: '#f7f8fa', padding: isMobile ? '48px 5%' : '72px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: isMobile ? 12 : 20 }}>
         {[
           { value: s1, suffix: '+', label: 'ميني ماركت',    sub: 'شريك في شبكة Shelfy',       color: '#378ADD', bg: '#e6f1fb', Icon: Store },
           { value: s2, suffix: '',  label: 'ساعة بث يومياً', sub: 'إعلانك يعمل طوال اليوم',    color: '#00c9a7', bg: '#e6fbf7', Icon: Clock },
           { value: s3, suffix: '+', label: 'مشاهدة شهرياً', sub: 'مستهلك يرى إعلانك',          color: '#f59e0b', bg: '#fef9e6', Icon: Eye   },
           { value: s4, suffix: '%', label: 'رضا العملاء',   sub: 'نسبة رضا العملاء العام',     color: '#a78bfa', bg: '#f3f0fe', Icon: Star  },
         ].map(s => (
-          <div key={s.label} style={{
-            background: 'white', borderRadius: 18, padding: '28px 22px',
-            border: '1px solid #eee', textAlign: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-          }}
-            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 12px 32px ${s.color}20` }}
-            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)' }}
-          >
-            <div style={{ width: 48, height: 48, background: s.bg, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-              <s.Icon size={22} color={s.color} strokeWidth={2} />
+          <div key={s.label} style={{ background: 'white', borderRadius: 16, padding: isMobile ? '20px 16px' : '28px 22px', border: '1px solid #eee', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ width: 44, height: 44, background: s.bg, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <s.Icon size={20} color={s.color} strokeWidth={2} />
             </div>
-            <div style={{ fontSize: 38, fontWeight: 900, color: s.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            <div style={{ fontSize: isMobile ? 28 : 38, fontWeight: 900, color: s.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {s.value.toLocaleString('ar-SA')}{s.suffix}
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginTop: 8 }}>{s.label}</div>
-            <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>{s.sub}</div>
+            <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: '#111', marginTop: 8 }}>{s.label}</div>
+            <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{s.sub}</div>
           </div>
         ))}
       </div>
@@ -280,58 +249,44 @@ function Stats() {
 
 /* ─── About ───────────────────────────────────── */
 function About() {
+  const isMobile = useIsMobile()
   return (
-    <section id="about" style={{ background: 'white', padding: '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+    <section id="about" style={{ background: 'white', padding: isMobile ? '56px 5%' : '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 40 : 64, alignItems: 'center' }}>
         <div>
-          <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>
-            من نحن
-          </div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, color: '#0e1117', lineHeight: 1.2, marginBottom: 20, letterSpacing: '-0.02em' }}>
-            الوصول للمستهلك<br />
-            <span style={{ color: '#378ADD' }}>في اللحظة المناسبة</span>
+          <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>من نحن</div>
+          <h2 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 900, color: '#0e1117', lineHeight: 1.2, marginBottom: 20, letterSpacing: '-0.02em' }}>
+            الوصول للمستهلك<br /><span style={{ color: '#378ADD' }}>في اللحظة المناسبة</span>
           </h2>
           <p style={{ fontSize: 15, color: '#666', lineHeight: 2, marginBottom: 16 }}>
             Shelfy Screens شركة سعودية متخصصة في الإعلانات الرقمية داخل نقاط البيع. نربط العلامات التجارية بشبكتنا المنتشرة من الشاشات الرقمية في الميني ماركت عبر المملكة.
           </p>
           <p style={{ fontSize: 15, color: '#666', lineHeight: 2, marginBottom: 28 }}>
-            نؤمن بأن أفضل لحظة للإعلان هي عندما يكون المستهلك أمام الرف مباشرة — وهذا بالضبط ما نوفره.
+            نؤمن بأن أفضل لحظة للإعلان هي عندما يكون المستهلك أمام الرف مباشرة.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {[
-              { Icon: Target,   text: 'استهداف جغرافي دقيق', color: '#378ADD' },
-              { Icon: Zap,      text: 'إطلاق خلال 24 ساعة',  color: '#f59e0b' },
+              { Icon: Target,    text: 'استهداف جغرافي دقيق', color: '#378ADD' },
+              { Icon: Zap,       text: 'إطلاق خلال 24 ساعة',  color: '#f59e0b' },
               { Icon: BarChart2, text: 'تقارير لحظية',         color: '#00c9a7' },
             ].map(f => (
-              <div key={f.text} style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                background: '#f7f8fa', borderRadius: 10, padding: '9px 14px',
-                fontSize: 13, color: '#333', fontWeight: 600,
-                border: '1px solid #ebebea',
-              }}>
-                <f.Icon size={15} color={f.color} strokeWidth={2.5} />
-                {f.text}
+              <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f7f8fa', borderRadius: 10, padding: '9px 14px', fontSize: 13, color: '#333', fontWeight: 600, border: '1px solid #ebebea' }}>
+                <f.Icon size={15} color={f.color} strokeWidth={2.5} /> {f.text}
               </div>
             ))}
           </div>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {[
-            { Icon: Store,   title: 'ميني ماركت', value: '50+',  color: '#378ADD', bg: '#e6f1fb' },
-            { Icon: MapPin,  title: 'مدن في المملكة', value: '8+', color: '#00c9a7', bg: '#e6fbf7' },
-            { Icon: Megaphone, title: 'حملة إعلانية', value: '200+', color: '#f59e0b', bg: '#fef9e6' },
-            { Icon: Award,   title: 'سنوات خبرة',  value: '3+',  color: '#a78bfa', bg: '#f3f0fe' },
+            { Icon: Store,    title: 'ميني ماركت',     value: '50+',  color: '#378ADD', bg: '#e6f1fb' },
+            { Icon: MapPin,   title: 'مدن في المملكة', value: '8+',   color: '#00c9a7', bg: '#e6fbf7' },
+            { Icon: Megaphone,title: 'حملة إعلانية',  value: '200+', color: '#f59e0b', bg: '#fef9e6' },
+            { Icon: Award,    title: 'سنوات خبرة',    value: '3+',   color: '#a78bfa', bg: '#f3f0fe' },
           ].map(c => (
-            <div key={c.title} style={{
-              background: c.bg, borderRadius: 18, padding: '24px 20px', textAlign: 'center',
-              border: `1px solid ${c.color}25`,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-                <c.Icon size={28} color={c.color} strokeWidth={1.8} />
-              </div>
-              <div style={{ fontSize: 30, fontWeight: 900, color: c.color, letterSpacing: '-0.02em' }}>{c.value}</div>
-              <div style={{ fontSize: 13, color: '#555', marginTop: 4, fontWeight: 600 }}>{c.title}</div>
+            <div key={c.title} style={{ background: c.bg, borderRadius: 16, padding: isMobile ? '20px 16px' : '24px 20px', textAlign: 'center', border: `1px solid ${c.color}25` }}>
+              <c.Icon size={26} color={c.color} strokeWidth={1.8} style={{ margin: '0 auto 8px', display: 'block' }} />
+              <div style={{ fontSize: isMobile ? 24 : 30, fontWeight: 900, color: c.color, letterSpacing: '-0.02em' }}>{c.value}</div>
+              <div style={{ fontSize: 12, color: '#555', marginTop: 4, fontWeight: 600 }}>{c.title}</div>
             </div>
           ))}
         </div>
@@ -342,49 +297,30 @@ function About() {
 
 /* ─── Services ────────────────────────────────── */
 function Services() {
+  const isMobile = useIsMobile()
   const services = [
-    { Icon: Monitor,    title: 'شاشات داخل الميني ماركت',    desc: 'شاشات عالية الجودة مثبّتة عند الرفوف ومناطق الدفع — تعرض إعلانك للمستهلك في لحظة اتخاذ القرار', color: '#378ADD', bg: '#e6f1fb' },
-    { Icon: Sparkles,   title: 'تصميم وإنشاء الحملات',        desc: 'فريقنا الإبداعي يصمم لك المحتوى الإعلاني المناسب — من الفيديو إلى الصورة — بأسلوب يجذب الانتباه', color: '#ec4899', bg: '#fce7f3' },
-    { Icon: Target,     title: 'استهداف دقيق',                desc: 'حدّد المتاجر والمناطق الجغرافية والأوقات التي تريد فيها عرض إعلانك — دقة تصل إلى ساعة بساعة', color: '#00c9a7', bg: '#e6fbf7' },
-    { Icon: BarChart2,  title: 'تقارير مفصّلة',               desc: 'لوحة تحكم تعرض مرات المشاهدة، ساعات البث، وأداء كل حملة بشكل لحظي مباشر', color: '#f59e0b', bg: '#fef9e6' },
-    { Icon: Rocket,     title: 'إطلاق سريع',                  desc: 'أطلق حملتك في أقل من 24 ساعة — فريقنا يتولى التركيب والإعداد الكامل بدون تعقيد', color: '#a78bfa', bg: '#f3f0fe' },
-    { Icon: Smartphone, title: 'إدارة من أي مكان',            desc: 'عدّل حملتك، وراجع نتائجك، وتواصل معنا في أي وقت — من هاتفك أو حاسوبك', color: '#22c55e', bg: '#e6fdf0' },
+    { Icon: Monitor,    title: 'شاشات داخل الميني ماركت',  desc: 'شاشات عالية الجودة مثبّتة عند الرفوف ومناطق الدفع — تعرض إعلانك في لحظة اتخاذ القرار',           color: '#378ADD', bg: '#e6f1fb' },
+    { Icon: Sparkles,   title: 'تصميم وإنشاء الحملات',      desc: 'فريقنا الإبداعي يصمم لك المحتوى الإعلاني المناسب — من الفيديو إلى الصورة',                       color: '#ec4899', bg: '#fce7f3' },
+    { Icon: Target,     title: 'استهداف دقيق',              desc: 'حدّد المتاجر والمناطق الجغرافية والأوقات التي تريد فيها عرض إعلانك بدقة تصل إلى ساعة بساعة',     color: '#00c9a7', bg: '#e6fbf7' },
+    { Icon: BarChart2,  title: 'تقارير مفصّلة',             desc: 'لوحة تحكم تعرض مرات المشاهدة وساعات البث وأداء كل حملة بشكل لحظي مباشر',                         color: '#f59e0b', bg: '#fef9e6' },
+    { Icon: Rocket,     title: 'إطلاق سريع',                desc: 'أطلق حملتك في أقل من 24 ساعة — فريقنا يتولى التركيب والإعداد الكامل',                             color: '#a78bfa', bg: '#f3f0fe' },
+    { Icon: Smartphone, title: 'إدارة من أي مكان',          desc: 'عدّل حملتك وراجع نتائجك وتواصل معنا في أي وقت من هاتفك أو حاسوبك',                               color: '#22c55e', bg: '#e6fdf0' },
   ]
-
   return (
-    <section id="services" style={{ background: '#f7f8fa', padding: '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
+    <section id="services" style={{ background: '#f7f8fa', padding: isMobile ? '56px 5%' : '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 16 }}>
-            خدماتنا
-          </div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, color: '#0e1117', marginBottom: 14, letterSpacing: '-0.02em' }}>
-            كل ما تحتاجه لحملة إعلانية ناجحة
-          </h2>
-          <p style={{ fontSize: 16, color: '#888', maxWidth: 520, margin: '0 auto', lineHeight: 1.9 }}>
-            من التصميم حتى التقرير — Shelfy يوفر منظومة متكاملة لإيصال إعلانك للمستهلك
-          </p>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 16 }}>خدماتنا</div>
+          <h2 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 900, color: '#0e1117', marginBottom: 14, letterSpacing: '-0.02em' }}>كل ما تحتاجه لحملة إعلانية ناجحة</h2>
+          <p style={{ fontSize: 15, color: '#888', maxWidth: 520, margin: '0 auto', lineHeight: 1.9 }}>من التصميم حتى التقرير — Shelfy يوفر منظومة متكاملة</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: isMobile ? 14 : 20 }}>
           {services.map(s => (
-            <div key={s.title} style={{
-              background: 'white', border: '1px solid #eee', borderRadius: 18, padding: '28px 24px',
-              transition: 'all 0.22s', cursor: 'default',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-            }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLDivElement
-                el.style.borderColor = s.color; el.style.boxShadow = `0 12px 40px ${s.color}20`; el.style.transform = 'translateY(-4px)'
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLDivElement
-                el.style.borderColor = '#eee'; el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; el.style.transform = 'translateY(0)'
-              }}
-            >
-              <div style={{ width: 52, height: 52, background: s.bg, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-                <s.Icon size={24} color={s.color} strokeWidth={1.8} />
+            <div key={s.title} style={{ background: 'white', border: '1px solid #eee', borderRadius: 16, padding: '24px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: 48, height: 48, background: s.bg, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <s.Icon size={22} color={s.color} strokeWidth={1.8} />
               </div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 10 }}>{s.title}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#111', marginBottom: 8 }}>{s.title}</h3>
               <p style={{ fontSize: 13, color: '#888', lineHeight: 1.9 }}>{s.desc}</p>
             </div>
           ))}
@@ -396,35 +332,31 @@ function Services() {
 
 /* ─── How it works ────────────────────────────── */
 function HowItWorks() {
+  const isMobile = useIsMobile()
   const steps = [
-    { num: '01', title: 'أرسل بياناتك',   desc: 'املأ النموذج وأخبرنا عن منتجك وجمهورك المستهدف والمناطق التي تريد الوصول إليها', Icon: ClipboardList, color: '#378ADD', bg: '#e6f1fb' },
-    { num: '02', title: 'نصمم ونُطلق',    desc: 'فريقنا يصمم لك الحملة ويختار الشاشات المناسبة — تُطلق الحملة خلال 24 ساعة',       Icon: Sparkles,     color: '#00c9a7', bg: '#e6fbf7' },
-    { num: '03', title: 'تابع النتائج',   desc: 'يبدأ عرض إعلانك فوراً وتتابع الأداء لحظة بلحظة عبر بوابتك الخاصة',              Icon: TrendingUp,   color: '#a78bfa', bg: '#f3f0fe' },
+    { num: '01', title: 'أرسل بياناتك',  desc: 'املأ النموذج وأخبرنا عن منتجك وجمهورك المستهدف والمناطق التي تريد الوصول إليها', Icon: ClipboardList, color: '#378ADD', bg: '#e6f1fb' },
+    { num: '02', title: 'نصمم ونُطلق',   desc: 'فريقنا يصمم لك الحملة ويختار الشاشات المناسبة — تُطلق الحملة خلال 24 ساعة',       Icon: Sparkles,     color: '#00c9a7', bg: '#e6fbf7' },
+    { num: '03', title: 'تابع النتائج',  desc: 'يبدأ عرض إعلانك فوراً وتتابع الأداء لحظة بلحظة عبر بوابتك الخاصة',              Icon: TrendingUp,   color: '#a78bfa', bg: '#f3f0fe' },
   ]
   return (
-    <section id="how" style={{ background: 'white', padding: '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
+    <section id="how" style={{ background: 'white', padding: isMobile ? '56px 5%' : '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 16 }}>
-            كيف يعمل
-          </div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, color: '#0e1117', letterSpacing: '-0.02em' }}>ثلاث خطوات بسيطة</h2>
-          <p style={{ fontSize: 15, color: '#999', marginTop: 12, lineHeight: 1.8 }}>من اللحظة التي تتواصل فيها معنا إلى إطلاق حملتك</p>
+        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 16 }}>كيف يعمل</div>
+          <h2 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 900, color: '#0e1117', letterSpacing: '-0.02em' }}>ثلاث خطوات بسيطة</h2>
+          <p style={{ fontSize: 14, color: '#999', marginTop: 10 }}>من اللحظة التي تتواصل فيها معنا إلى إطلاق حملتك</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24, position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 44, right: '16.5%', left: '16.5%', height: 1, background: 'linear-gradient(90deg, #378ADD30, #00c9a730, #a78bfa30)', zIndex: 0 }} />
-          {steps.map((s) => (
-            <div key={s.num} style={{ position: 'relative', textAlign: 'center', zIndex: 1 }}>
-              <div style={{
-                width: 88, height: 88, borderRadius: '50%', margin: '0 auto 24px',
-                background: s.bg, border: `2px solid ${s.color}25`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <s.Icon size={36} color={s.color} strokeWidth={1.6} />
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: isMobile ? 24 : 24 }}>
+          {steps.map((s, i) => (
+            <div key={s.num} style={{ textAlign: 'center', display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 0 }}>
+              <div style={{ width: isMobile ? 64 : 88, height: isMobile ? 64 : 88, flexShrink: 0, borderRadius: '50%', background: s.bg, border: `2px solid ${s.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: isMobile ? '0' : '0 auto 24px' }}>
+                <s.Icon size={isMobile ? 28 : 36} color={s.color} strokeWidth={1.6} />
               </div>
-              <div style={{ fontSize: 11, color: s.color, fontWeight: 800, marginBottom: 10, letterSpacing: '0.1em' }}>{s.num}</div>
-              <h3 style={{ fontSize: 19, fontWeight: 800, color: '#111', marginBottom: 12 }}>{s.title}</h3>
-              <p style={{ fontSize: 13, color: '#888', lineHeight: 1.9, maxWidth: 240, margin: '0 auto' }}>{s.desc}</p>
+              <div style={{ textAlign: isMobile ? 'right' : 'center' }}>
+                <div style={{ fontSize: 11, color: s.color, fontWeight: 800, marginBottom: 6, letterSpacing: '0.1em' }}>{s.num}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 8 }}>{s.title}</h3>
+                <p style={{ fontSize: 13, color: '#888', lineHeight: 1.9, maxWidth: isMobile ? 'none' : 240, margin: isMobile ? '0' : '0 auto' }}>{s.desc}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -435,6 +367,7 @@ function HowItWorks() {
 
 /* ─── Lead Form ───────────────────────────────── */
 function StartForm() {
+  const isMobile = useIsMobile()
   const [form, setForm] = useState({ name: '', company: '', phone: '', city: '', notes: '' })
   const [sent, setSent] = useState(false)
 
@@ -446,60 +379,48 @@ function StartForm() {
     setSent(true)
   }
 
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box' }
+
   return (
-    <section id="start" style={{ background: '#0e1117', padding: '96px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
+    <section id="start" style={{ background: '#0e1117', padding: isMobile ? '64px 5%' : '96px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ display: 'inline-block', background: 'rgba(55,138,221,0.12)', border: '1px solid rgba(55,138,221,0.2)', color: '#7ec8f5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>
-            ابدأ الآن
-          </div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, color: 'white', marginBottom: 14, letterSpacing: '-0.02em' }}>
-            أطلق حملتك الإعلانية
-          </h2>
-          <p style={{ fontSize: 15, color: '#7788a0', lineHeight: 1.9 }}>
-            أرسل بياناتك وسيتواصل معك فريقنا خلال ساعات لتصميم حملتك المثالية
-          </p>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ display: 'inline-block', background: 'rgba(55,138,221,0.12)', border: '1px solid rgba(55,138,221,0.2)', color: '#7ec8f5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>ابدأ الآن</div>
+          <h2 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 900, color: 'white', marginBottom: 12, letterSpacing: '-0.02em' }}>أطلق حملتك الإعلانية</h2>
+          <p style={{ fontSize: 14, color: '#7788a0', lineHeight: 1.9 }}>أرسل بياناتك وسيتواصل معك فريقنا خلال ساعات</p>
         </div>
 
         {sent ? (
-          <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 20, padding: '48px', textAlign: 'center' }}>
-            <CheckCircle size={52} color="#4ade80" strokeWidth={1.5} style={{ margin: '0 auto 16px', display: 'block' }} />
-            <h3 style={{ color: '#4ade80', fontSize: 22, fontWeight: 800, marginBottom: 8 }}>تم الإرسال!</h3>
-            <p style={{ color: '#7788a0', fontSize: 15, lineHeight: 1.8 }}>فُتحت نافذة واتساب بمعلوماتك — سيتواصل معك فريقنا قريباً</p>
-            <button onClick={() => setSent(false)} style={{ marginTop: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', padding: '10px 24px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', fontSize: 14 }}>
-              إرسال طلب آخر
-            </button>
+          <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 20, padding: '48px 24px', textAlign: 'center' }}>
+            <CheckCircle size={48} color="#4ade80" strokeWidth={1.5} style={{ margin: '0 auto 16px', display: 'block' }} />
+            <h3 style={{ color: '#4ade80', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>تم الإرسال!</h3>
+            <p style={{ color: '#7788a0', fontSize: 14, lineHeight: 1.8 }}>فُتحت نافذة واتساب — سيتواصل معك فريقنا قريباً</p>
+            <button onClick={() => setSent(false)} style={{ marginTop: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', padding: '10px 24px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', fontSize: 14 }}>إرسال طلب آخر</button>
           </div>
         ) : (
-          <form onSubmit={submit} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '36px 32px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-              {[
-                { key: 'name', label: 'الاسم الكامل', placeholder: 'محمد صالح', required: true },
-                { key: 'company', label: 'اسم الشركة / العلامة التجارية', placeholder: 'شركة المثال', required: false },
-                { key: 'phone', label: 'رقم الواتساب', placeholder: '05xxxxxxxx', required: true, ltr: true },
-              ].map(f => (
-                <div key={f.key} style={f.key === 'phone' ? {} : {}}>
-                  <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>
-                    {f.label} {f.required && <span style={{ color: '#f43f5e' }}>*</span>}
-                  </label>
-                  <input
-                    required={f.required}
-                    value={(form as any)[f.key]}
-                    onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder}
-                    dir={f.ltr ? 'ltr' : undefined}
-                    style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', textAlign: f.ltr ? 'left' : undefined as any }}
-                    onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                    onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-                  />
-                </div>
-              ))}
+          <form onSubmit={submit} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 22, padding: isMobile ? '24px 20px' : '36px 32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>الاسم الكامل <span style={{ color: '#f43f5e' }}>*</span></label>
+                <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="محمد صالح" style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = '#378ADD')} onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>اسم الشركة / العلامة التجارية</label>
+                <input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} placeholder="شركة المثال" style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = '#378ADD')} onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>رقم الواتساب <span style={{ color: '#f43f5e' }}>*</span></label>
+                <input required value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05xxxxxxxx" dir="ltr"
+                  style={{ ...inputStyle, textAlign: 'left' }}
+                  onFocus={e => (e.target.style.borderColor = '#378ADD')} onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>المدينة</label>
                 <select value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                  style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: form.city ? 'white' : '#555', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
-                  onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                  onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}>
+                  style={{ ...inputStyle, color: form.city ? 'white' : '#555', cursor: 'pointer' }}
+                  onFocus={e => (e.target.style.borderColor = '#378ADD')} onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}>
                   <option value="" style={{ background: '#1a2030' }}>— اختر المدينة —</option>
                   {['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الطائف','أبها'].map(c => (
                     <option key={c} value={c} style={{ background: '#1a2030' }}>{c}</option>
@@ -507,33 +428,16 @@ function StartForm() {
                 </select>
               </div>
             </div>
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 22 }}>
               <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>تفاصيل إضافية (اختياري)</label>
-              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                rows={3} placeholder="أخبرنا عن منتجك وما تريد تحقيقه..."
-                style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', resize: 'none' }}
-                onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-              />
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="أخبرنا عن منتجك وما تريد تحقيقه..."
+                style={{ ...inputStyle, resize: 'none' }}
+                onFocus={e => (e.target.style.borderColor = '#378ADD')} onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
             </div>
-            <button type="submit" style={{
-              width: '100%', padding: '14px', borderRadius: 12,
-              background: 'linear-gradient(135deg, #378ADD, #185FA5)',
-              border: 'none', color: 'white', fontSize: 16, fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'Cairo, sans-serif',
-              boxShadow: '0 4px 20px rgba(55,138,221,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              transition: 'transform 0.15s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
-            >
-              <MessageCircle size={20} />
-              أرسل طلبي عبر واتساب
+            <button type="submit" style={{ width: '100%', padding: '14px', borderRadius: 12, background: 'linear-gradient(135deg, #378ADD, #185FA5)', border: 'none', color: 'white', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', boxShadow: '0 4px 20px rgba(55,138,221,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <MessageCircle size={20} /> أرسل طلبي عبر واتساب
             </button>
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#444', marginTop: 14 }}>
-              سنتواصل معك خلال ساعات لمناقشة التفاصيل
-            </p>
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#444', marginTop: 14 }}>سنتواصل معك خلال ساعات لمناقشة التفاصيل</p>
           </form>
         )}
       </div>
@@ -544,21 +448,11 @@ function StartForm() {
 /* ─── Client Login ────────────────────────────── */
 function ClientLogin() {
   return (
-    <section id="login" style={{ background: '#080c14', padding: '52px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+    <section id="login" style={{ background: '#080c14', padding: '44px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
         <p style={{ fontSize: 13, color: '#3a3f50', marginBottom: 14 }}>هل أنت عميل لدى Shelfy؟</p>
-        <a href="/portal-login" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-          color: '#555', textDecoration: 'none',
-          padding: '11px 24px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-          transition: 'all 0.15s',
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#aaa'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.12)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#555'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
-        >
-          <Users size={15} />
-          دخول بوابة العملاء
+        <a href="/portal-login" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#555', textDecoration: 'none', padding: '11px 24px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
+          <Users size={15} /> دخول بوابة العملاء
         </a>
       </div>
     </section>
@@ -567,47 +461,38 @@ function ClientLogin() {
 
 /* ─── Footer ──────────────────────────────────── */
 function Footer() {
+  const isMobile = useIsMobile()
   return (
-    <footer style={{ background: '#060810', padding: '44px 5% 32px', fontFamily: 'Cairo, sans-serif', direction: 'rtl', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+    <footer style={{ background: '#060810', padding: isMobile ? '36px 5% 24px' : '44px 5% 32px', fontFamily: 'Cairo, sans-serif', direction: 'rtl', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 32, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: isMobile ? 32 : 48, marginBottom: 28 }}>
           <div>
-            <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 38, objectFit: 'contain', marginBottom: 12 }} />
-            <p style={{ fontSize: 13, color: '#2e3340', margin: 0, lineHeight: 1.8, maxWidth: 240 }}>
-              شبكة الإعلانات الرقمية داخل نقاط البيع<br />المملكة العربية السعودية
-            </p>
+            <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 36, objectFit: 'contain', marginBottom: 10 }} />
+            <p style={{ fontSize: 13, color: '#2e3340', margin: 0, lineHeight: 1.8 }}>شبكة الإعلانات الرقمية داخل نقاط البيع<br />المملكة العربية السعودية</p>
           </div>
-          <div style={{ display: 'flex', gap: 48 }}>
+          <div style={{ display: 'flex', gap: isMobile ? 32 : 48, flexWrap: 'wrap' }}>
             <div>
-              <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: '0.05em' }}>التنقل</p>
+              <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 12, letterSpacing: '0.05em' }}>التنقل</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[['من نحن','#about'],['الخدمات','#services'],['كيف يعمل','#how'],['ابدأ حملتك','#start']].map(([label, href]) => (
-                  <a key={label} href={href} style={{ color: '#333', textDecoration: 'none', fontSize: 13, transition: 'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#333')}>{label}</a>
+                  <a key={label} href={href} style={{ color: '#333', textDecoration: 'none', fontSize: 13 }}>{label}</a>
                 ))}
               </div>
             </div>
             <div>
-              <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: '0.05em' }}>تواصل معنا</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <a href="https://wa.me/966XXXXXXXXX" target="_blank" rel="noopener noreferrer"
-                  style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#25D366')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
-                  <MessageCircle size={14} /> واتساب
+              <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 12, letterSpacing: '0.05em' }}>تواصل معنا</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <a href="https://wa.me/966XXXXXXXXX" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MessageCircle size={13} /> واتساب
                 </a>
-                <a href="mailto:Sshelfyscreens@gmail.com"
-                  style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
-                  <Mail size={14} /> Sshelfyscreens@gmail.com
+                <a href="mailto:Sshelfyscreens@gmail.com" style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Mail size={13} /> Sshelfyscreens@gmail.com
                 </a>
               </div>
             </div>
           </div>
         </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <p style={{ fontSize: 11, color: '#1e2230', margin: 0 }}>© {new Date().getFullYear()} Shelfy Screens. جميع الحقوق محفوظة.</p>
           <Link href="/dashboard" style={{ fontSize: 11, color: '#1a1f2e', textDecoration: 'none' }}>لوحة التحكم</Link>
         </div>

@@ -52,6 +52,85 @@ function StatCard({ icon, label, value, color, suffix = '' }: { icon: string; la
   )
 }
 
+/* ─── Star Rating ─────────────────────────────── */
+function StarRating({ campaignId }: { campaignId: string }) {
+  const [rating, setRating] = useState(0)
+  const [hover, setHover] = useState(0)
+  const [comment, setComment] = useState('')
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [existing, setExisting] = useState<any>(null)
+
+  useEffect(() => {
+    fetch(`/api/reviews?campaignId=${campaignId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.rating) {
+          setExisting(d)
+          setRating(d.rating)
+          setComment(d.comment || '')
+          setSaved(true)
+        }
+      })
+  }, [campaignId])
+
+  const submit = async () => {
+    if (!rating) return
+    setSaving(true)
+    await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campaign_id: campaignId, rating, comment }),
+    })
+    setSaving(false)
+    setSaved(true)
+    setExisting({ rating, comment })
+  }
+
+  if (saved && existing) {
+    return (
+      <div style={{ marginTop: 10, padding: '10px 14px', background: '#f8fdf5', borderRadius: 10, border: '1px solid #d1fae5', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 2 }}>
+          {[1,2,3,4,5].map(i => (
+            <span key={i} style={{ fontSize: 14, color: i <= existing.rating ? '#f59e0b' : '#e5e7eb' }}>★</span>
+          ))}
+        </div>
+        <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>شكراً لتقييمك</span>
+        <button onClick={() => setSaved(false)} style={{ marginRight: 'auto', fontSize: 11, color: '#aaa', background: 'none', border: 'none', cursor: 'pointer' }}>تعديل</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 10, padding: '12px 14px', background: '#fafaf8', borderRadius: 10, border: '1px solid #ebebea' }}>
+      <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>كيف كانت تجربتك مع هذه الحملة؟</p>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {[1,2,3,4,5].map(i => (
+          <button key={i} onClick={() => setRating(i)}
+            onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(0)}
+            style={{ fontSize: 24, color: i <= (hover || rating) ? '#f59e0b' : '#e5e7eb', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', transition: 'color 0.1s' }}>★</button>
+        ))}
+      </div>
+      {rating > 0 && (
+        <>
+          <input
+            value={comment} onChange={e => setComment(e.target.value)}
+            placeholder="تعليق اختياري..."
+            style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+          />
+          <button onClick={submit} disabled={saving} style={{
+            padding: '7px 18px', background: 'linear-gradient(135deg, #378ADD, #185FA5)',
+            border: 'none', borderRadius: 8, color: 'white', fontSize: 13, fontWeight: 600,
+            cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Cairo, sans-serif',
+          }}>
+            {saving ? 'جاري الحفظ...' : 'إرسال التقييم'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function ClientPortalPage() {
   const { token } = useParams()
   const [data, setData] = useState<any>(null)
@@ -237,6 +316,7 @@ export default function ClientPortalPage() {
                       </div>
                     )}
                   </div>
+                  {c.status === 'ended' && <StarRating campaignId={c.id} />}
                 )
               })}
             </div>
