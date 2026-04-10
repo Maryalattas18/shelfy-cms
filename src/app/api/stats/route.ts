@@ -153,5 +153,69 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // ─── تقرير شهري ──────────────────────────────────
+  if (type === 'monthly') {
+    const month = req.nextUrl.searchParams.get('month') // YYYY-MM
+    if (!month) return NextResponse.json({ error: 'month مطلوب' }, { status: 400 })
+
+    const [year, mon] = month.split('-').map(Number)
+    const start = new Date(year, mon - 1, 1).toISOString().split('T')[0]
+    const end = new Date(year, mon, 0).toISOString().split('T')[0] // آخر يوم في الشهر
+
+    const [
+      { data: campaigns },
+      { data: clients },
+      { data: logs },
+    ] = await Promise.all([
+      supabase
+        .from('campaigns')
+        .select('id, name, status, price, start_date, end_date, client_id, clients(company_name)')
+        .or(`start_date.lte.${end},end_date.gte.${start}`)
+        .order('start_date', { ascending: true }),
+      supabase.from('clients').select('id, company_name'),
+      supabase
+        .from('play_logs')
+        .select('screen_id, duration_sec, media_id')
+        .gte('played_at', `${start}T00:00:00`)
+        .lte('played_at', `${end}T23:59:59`),
+    ])
+
+    const allCampaigns = campaigns || []
+    const allClients = clients || []
+    const allLogs = logs || []
+
+    // إجمالي الإيرادات
+    const totalRevenue = allCampaigns.reduce((s: number, c: any) => s + Number(c.price || 0), 0)
+    const activeCampaigns = allCampaigns.filter((c: any) => c.status === 'active').length
+    const endedCampaigns = allCampaigns.filter((c: any) => c.status === 'ended').length
+    const totalPlays = allLogs.length
+    const totalSec = allLogs.reduce((s: number, l: any) => s + (l.duration_sec || 0), 0)
+    const totalHours = parseFloat((totalSec / 3600).toFixed(1))
+
+    // الإيرادات حسب العميل
+    const clientRevMap: Record<string, { name: string; revenue: number; campaigns: any[] }> = {}
+    allCampaigns.forEach((c: any) => {
+      const clientId = c.client_id
+      if (!clientId) return
+      const clientName = (c.clients as any)?.company_name || allClients.find((cl: any) => cl.id === clientId)?.company_name || '—'
+      if (!clientRevMap[clientId]) clientRevMap[clientId] = { name: clientName, revenue: 0, campaigns: [] }
+      clientRevMap[clientId].revenue += Number(c.price || 0)
+      clientRevMap[clientId].campaigns.push(c)
+    })
+    const clientBreakdown = Object.values(clientRevMap).sort((a, b) => b.revenue - a.revenue)
+
+    return NextResponse.json({
+      month,
+      totalRevenue,
+      totalCampaigns: allCampaigns.length,
+      activeCampaigns,
+      endedCampaigns,
+      totalPlays,
+      totalHours,
+      campaigns: allCampaigns,
+      clientBreakdown,
+    })
+  }
+
   return NextResponse.json({ error: 'type غير معروف' }, { status: 400 })
 }
