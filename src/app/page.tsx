@@ -1,6 +1,12 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import {
+  Store, Clock, Eye, Star, Target, Zap, BarChart2,
+  Sparkles, Rocket, Smartphone, Users, ClipboardList,
+  TrendingUp, Megaphone, Monitor, Globe, Award,
+  CheckCircle, ArrowLeft, MapPin, MessageCircle, Mail,
+} from 'lucide-react'
 
 /* ─── count-up hook ───────────────────────────── */
 function useCountUp(target: number, started: boolean) {
@@ -80,12 +86,10 @@ function Hero() {
       position: 'relative', overflow: 'hidden',
       fontFamily: 'Cairo, sans-serif', direction: 'rtl',
     }}>
-      {/* خلفيات متوهجة */}
       <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: 700, height: 700, background: 'radial-gradient(circle, rgba(55,138,221,0.13) 0%, transparent 65%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, background: 'radial-gradient(circle, rgba(0,201,167,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '20%', left: '5%', width: 300, height: 300, background: 'radial-gradient(circle, rgba(167,139,250,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      {/* Badge */}
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 8,
         background: 'rgba(55,138,221,0.1)', border: '1px solid rgba(55,138,221,0.22)',
@@ -124,9 +128,7 @@ function Hero() {
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 28px rgba(55,138,221,0.45)' }}
         >
           ابدأ حملتك الإعلانية
-          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" style={{ transform: 'rotate(180deg)' }}>
-            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-          </svg>
+          <ArrowLeft size={18} />
         </a>
         <a href="#how" style={{
           background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
@@ -155,20 +157,20 @@ function Hero() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
               {[
-                { label: 'مرات العرض', value: '124,500', color: '#378ADD', icon: '▶' },
-                { label: 'الشاشات النشطة', value: '48', color: '#00c9a7', icon: '📺' },
-                { label: 'الحملات', value: '23', color: '#f59e0b', icon: '📢' },
-                { label: 'العملاء', value: '17', color: '#a78bfa', icon: '🤝' },
+                { label: 'مرات العرض', value: '124,500', color: '#378ADD' },
+                { label: 'الشاشات النشطة', value: '48', color: '#00c9a7' },
+                { label: 'الحملات', value: '23', color: '#f59e0b' },
+                { label: 'العملاء', value: '17', color: '#a78bfa' },
               ].map(s => (
                 <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '14px', border: `1px solid ${s.color}20` }}>
-                  <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>{s.icon} {s.label}</div>
+                  <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>{s.label}</div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
                 </div>
               ))}
             </div>
             <div style={{ height: 72, background: 'rgba(55,138,221,0.07)', borderRadius: 12, border: '1px solid rgba(55,138,221,0.1)', display: 'flex', alignItems: 'flex-end', padding: '0 16px 10px', gap: 5 }}>
               {[30,45,35,60,75,55,80,65,70,85,60,90,72,88,95].map((h, i) => (
-                <div key={i} style={{ flex: 1, height: h * 0.55, background: `linear-gradient(to top, #378ADD${Math.round(50 + i*8).toString(16)}, #00c9a7${Math.round(30 + i*5).toString(16)})`, borderRadius: '3px 3px 0 0', minWidth: 8 }} />
+                <div key={i} style={{ flex: 1, height: h * 0.55, background: `rgba(55,138,221,${0.3 + i * 0.04})`, borderRadius: '3px 3px 0 0', minWidth: 8 }} />
               ))}
             </div>
           </div>
@@ -177,7 +179,6 @@ function Hero() {
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
     </section>
   )
@@ -196,10 +197,10 @@ function Stats() {
     <section ref={ref} style={{ background: '#f7f8fa', padding: '72px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
         {[
-          { value: s1,       suffix: '+', label: 'ميني ماركت',    sub: 'شريك في شبكة Shelfy',     color: '#378ADD', bg: '#e6f1fb', icon: '🏪' },
-          { value: s2,       suffix: '',  label: 'ساعة بث يومياً', sub: 'إعلانك يعمل طوال اليوم',   color: '#00c9a7', bg: '#e6fbf7', icon: '⏱' },
-          { value: s3,       suffix: '+', label: 'مشاهدة شهرياً', sub: 'مستهلك يرى إعلانك',       color: '#f59e0b', bg: '#fef9e6', icon: '👁' },
-          { value: s4,       suffix: '%', label: 'رضا العملاء',   sub: 'نسبة رضا العملاء العام',   color: '#a78bfa', bg: '#f3f0fe', icon: '⭐' },
+          { value: s1, suffix: '+', label: 'ميني ماركت',    sub: 'شريك في شبكة Shelfy',       color: '#378ADD', bg: '#e6f1fb', Icon: Store },
+          { value: s2, suffix: '',  label: 'ساعة بث يومياً', sub: 'إعلانك يعمل طوال اليوم',    color: '#00c9a7', bg: '#e6fbf7', Icon: Clock },
+          { value: s3, suffix: '+', label: 'مشاهدة شهرياً', sub: 'مستهلك يرى إعلانك',          color: '#f59e0b', bg: '#fef9e6', Icon: Eye   },
+          { value: s4, suffix: '%', label: 'رضا العملاء',   sub: 'نسبة رضا العملاء العام',     color: '#a78bfa', bg: '#f3f0fe', Icon: Star  },
         ].map(s => (
           <div key={s.label} style={{
             background: 'white', borderRadius: 18, padding: '28px 22px',
@@ -210,7 +211,9 @@ function Stats() {
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 12px 32px ${s.color}20` }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)' }}
           >
-            <div style={{ width: 48, height: 48, background: s.bg, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, margin: '0 auto 14px' }}>{s.icon}</div>
+            <div style={{ width: 48, height: 48, background: s.bg, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <s.Icon size={22} color={s.color} strokeWidth={2} />
+            </div>
             <div style={{ fontSize: 38, fontWeight: 900, color: s.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {s.value.toLocaleString('ar-SA')}{s.suffix}
             </div>
@@ -228,7 +231,6 @@ function About() {
   return (
     <section id="about" style={{ background: 'white', padding: '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
-        {/* نص */}
         <div>
           <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>
             من نحن
@@ -243,11 +245,11 @@ function About() {
           <p style={{ fontSize: 15, color: '#666', lineHeight: 2, marginBottom: 28 }}>
             نؤمن بأن أفضل لحظة للإعلان هي عندما يكون المستهلك أمام الرف مباشرة — وهذا بالضبط ما نوفره.
           </p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {[
-              { icon: '🎯', text: 'استهداف جغرافي دقيق' },
-              { icon: '⚡', text: 'إطلاق خلال 24 ساعة' },
-              { icon: '📊', text: 'تقارير لحظية' },
+              { Icon: Target,   text: 'استهداف جغرافي دقيق', color: '#378ADD' },
+              { Icon: Zap,      text: 'إطلاق خلال 24 ساعة',  color: '#f59e0b' },
+              { Icon: BarChart2, text: 'تقارير لحظية',         color: '#00c9a7' },
             ].map(f => (
               <div key={f.text} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
@@ -255,25 +257,27 @@ function About() {
                 fontSize: 13, color: '#333', fontWeight: 600,
                 border: '1px solid #ebebea',
               }}>
-                <span>{f.icon}</span> {f.text}
+                <f.Icon size={15} color={f.color} strokeWidth={2.5} />
+                {f.text}
               </div>
             ))}
           </div>
         </div>
 
-        {/* بطاقات مرئية */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {[
-            { icon: '🏪', title: 'ميني ماركت', value: '50+', color: '#378ADD', bg: '#e6f1fb' },
-            { icon: '🌍', title: 'مدن في المملكة', value: '8+', color: '#00c9a7', bg: '#e6fbf7' },
-            { icon: '📢', title: 'حملة إعلانية', value: '200+', color: '#f59e0b', bg: '#fef9e6' },
-            { icon: '🏆', title: 'سنوات خبرة', value: '3+', color: '#a78bfa', bg: '#f3f0fe' },
+            { Icon: Store,   title: 'ميني ماركت', value: '50+',  color: '#378ADD', bg: '#e6f1fb' },
+            { Icon: MapPin,  title: 'مدن في المملكة', value: '8+', color: '#00c9a7', bg: '#e6fbf7' },
+            { Icon: Megaphone, title: 'حملة إعلانية', value: '200+', color: '#f59e0b', bg: '#fef9e6' },
+            { Icon: Award,   title: 'سنوات خبرة',  value: '3+',  color: '#a78bfa', bg: '#f3f0fe' },
           ].map(c => (
             <div key={c.title} style={{
               background: c.bg, borderRadius: 18, padding: '24px 20px', textAlign: 'center',
               border: `1px solid ${c.color}25`,
             }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>{c.icon}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                <c.Icon size={28} color={c.color} strokeWidth={1.8} />
+              </div>
               <div style={{ fontSize: 30, fontWeight: 900, color: c.color, letterSpacing: '-0.02em' }}>{c.value}</div>
               <div style={{ fontSize: 13, color: '#555', marginTop: 4, fontWeight: 600 }}>{c.title}</div>
             </div>
@@ -287,42 +291,12 @@ function About() {
 /* ─── Services ────────────────────────────────── */
 function Services() {
   const services = [
-    {
-      icon: '📺',
-      title: 'شاشات داخل الميني ماركت',
-      desc: 'شاشات عالية الجودة مثبّتة عند الرفوف ومناطق الدفع — تعرض إعلانك للمستهلك في لحظة اتخاذ القرار',
-      color: '#378ADD', bg: '#e6f1fb',
-    },
-    {
-      icon: '🎨',
-      title: 'تصميم وإنشاء الحملات',
-      desc: 'فريقنا الإبداعي يصمم لك المحتوى الإعلاني المناسب — من الفيديو إلى الصورة — بأسلوب يجذب الانتباه',
-      color: '#ec4899', bg: '#fce7f3',
-    },
-    {
-      icon: '🎯',
-      title: 'استهداف دقيق',
-      desc: 'حدّد المتاجر والمناطق الجغرافية والأوقات التي تريد فيها عرض إعلانك — دقة تصل إلى ساعة بساعة',
-      color: '#00c9a7', bg: '#e6fbf7',
-    },
-    {
-      icon: '📊',
-      title: 'تقارير مفصّلة',
-      desc: 'لوحة تحكم تعرض مرات المشاهدة، ساعات البث، وأداء كل حملة بشكل لحظي مباشر',
-      color: '#f59e0b', bg: '#fef9e6',
-    },
-    {
-      icon: '🚀',
-      title: 'إطلاق سريع',
-      desc: 'أطلق حملتك في أقل من 24 ساعة — فريقنا يتولى التركيب والإعداد الكامل بدون تعقيد',
-      color: '#a78bfa', bg: '#f3f0fe',
-    },
-    {
-      icon: '📱',
-      title: 'إدارة من أي مكان',
-      desc: 'عدّل حملتك، وراجع نتائجك، وتواصل معنا في أي وقت — من هاتفك أو حاسوبك',
-      color: '#22c55e', bg: '#e6fdf0',
-    },
+    { Icon: Monitor,    title: 'شاشات داخل الميني ماركت',    desc: 'شاشات عالية الجودة مثبّتة عند الرفوف ومناطق الدفع — تعرض إعلانك للمستهلك في لحظة اتخاذ القرار', color: '#378ADD', bg: '#e6f1fb' },
+    { Icon: Sparkles,   title: 'تصميم وإنشاء الحملات',        desc: 'فريقنا الإبداعي يصمم لك المحتوى الإعلاني المناسب — من الفيديو إلى الصورة — بأسلوب يجذب الانتباه', color: '#ec4899', bg: '#fce7f3' },
+    { Icon: Target,     title: 'استهداف دقيق',                desc: 'حدّد المتاجر والمناطق الجغرافية والأوقات التي تريد فيها عرض إعلانك — دقة تصل إلى ساعة بساعة', color: '#00c9a7', bg: '#e6fbf7' },
+    { Icon: BarChart2,  title: 'تقارير مفصّلة',               desc: 'لوحة تحكم تعرض مرات المشاهدة، ساعات البث، وأداء كل حملة بشكل لحظي مباشر', color: '#f59e0b', bg: '#fef9e6' },
+    { Icon: Rocket,     title: 'إطلاق سريع',                  desc: 'أطلق حملتك في أقل من 24 ساعة — فريقنا يتولى التركيب والإعداد الكامل بدون تعقيد', color: '#a78bfa', bg: '#f3f0fe' },
+    { Icon: Smartphone, title: 'إدارة من أي مكان',            desc: 'عدّل حملتك، وراجع نتائجك، وتواصل معنا في أي وقت — من هاتفك أو حاسوبك', color: '#22c55e', bg: '#e6fdf0' },
   ]
 
   return (
@@ -348,19 +322,15 @@ function Services() {
             }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLDivElement
-                el.style.borderColor = s.color
-                el.style.boxShadow = `0 12px 40px ${s.color}20`
-                el.style.transform = 'translateY(-4px)'
+                el.style.borderColor = s.color; el.style.boxShadow = `0 12px 40px ${s.color}20`; el.style.transform = 'translateY(-4px)'
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLDivElement
-                el.style.borderColor = '#eee'
-                el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'
-                el.style.transform = 'translateY(0)'
+                el.style.borderColor = '#eee'; el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; el.style.transform = 'translateY(0)'
               }}
             >
-              <div style={{ width: 52, height: 52, background: s.bg, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 18 }}>
-                {s.icon}
+              <div style={{ width: 52, height: 52, background: s.bg, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                <s.Icon size={24} color={s.color} strokeWidth={1.8} />
               </div>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 10 }}>{s.title}</h3>
               <p style={{ fontSize: 13, color: '#888', lineHeight: 1.9 }}>{s.desc}</p>
@@ -375,9 +345,9 @@ function Services() {
 /* ─── How it works ────────────────────────────── */
 function HowItWorks() {
   const steps = [
-    { num: '01', title: 'أرسل بياناتك', desc: 'املأ النموذج أدناه وأخبرنا عن منتجك وجمهورك المستهدف والمناطق التي تريد الوصول إليها', icon: '📋', color: '#378ADD' },
-    { num: '02', title: 'نصمم ونُطلق', desc: 'فريقنا يصمم لك الحملة ويختار الشاشات المناسبة — تُطلق الحملة خلال 24 ساعة', icon: '🎨', color: '#00c9a7' },
-    { num: '03', title: 'تابع النتائج', desc: 'يبدأ عرض إعلانك فوراً وتتابع الأداء لحظة بلحظة عبر بوابتك الخاصة', icon: '📈', color: '#a78bfa' },
+    { num: '01', title: 'أرسل بياناتك',   desc: 'املأ النموذج وأخبرنا عن منتجك وجمهورك المستهدف والمناطق التي تريد الوصول إليها', Icon: ClipboardList, color: '#378ADD', bg: '#e6f1fb' },
+    { num: '02', title: 'نصمم ونُطلق',    desc: 'فريقنا يصمم لك الحملة ويختار الشاشات المناسبة — تُطلق الحملة خلال 24 ساعة',       Icon: Sparkles,     color: '#00c9a7', bg: '#e6fbf7' },
+    { num: '03', title: 'تابع النتائج',   desc: 'يبدأ عرض إعلانك فوراً وتتابع الأداء لحظة بلحظة عبر بوابتك الخاصة',              Icon: TrendingUp,   color: '#a78bfa', bg: '#f3f0fe' },
   ]
   return (
     <section id="how" style={{ background: 'white', padding: '88px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl' }}>
@@ -386,23 +356,20 @@ function HowItWorks() {
           <div style={{ display: 'inline-block', background: '#e6f1fb', color: '#185FA5', borderRadius: 999, padding: '5px 18px', fontSize: 12, fontWeight: 700, marginBottom: 16 }}>
             كيف يعمل
           </div>
-          <h2 style={{ fontSize: 38, fontWeight: 900, color: '#0e1117', letterSpacing: '-0.02em' }}>
-            ثلاث خطوات بسيطة
-          </h2>
+          <h2 style={{ fontSize: 38, fontWeight: 900, color: '#0e1117', letterSpacing: '-0.02em' }}>ثلاث خطوات بسيطة</h2>
           <p style={{ fontSize: 15, color: '#999', marginTop: 12, lineHeight: 1.8 }}>من اللحظة التي تتواصل فيها معنا إلى إطلاق حملتك</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24, position: 'relative' }}>
-          {/* خط رابط */}
-          <div style={{ position: 'absolute', top: 52, right: '16.5%', left: '16.5%', height: 2, background: 'linear-gradient(90deg, #378ADD40, #00c9a740, #a78bfa40)', zIndex: 0 }} />
+          <div style={{ position: 'absolute', top: 44, right: '16.5%', left: '16.5%', height: 1, background: 'linear-gradient(90deg, #378ADD30, #00c9a730, #a78bfa30)', zIndex: 0 }} />
           {steps.map((s) => (
             <div key={s.num} style={{ position: 'relative', textAlign: 'center', zIndex: 1 }}>
               <div style={{
                 width: 88, height: 88, borderRadius: '50%', margin: '0 auto 24px',
-                background: `linear-gradient(135deg, ${s.color}22, ${s.color}10)`,
-                border: `2px solid ${s.color}30`,
+                background: s.bg, border: `2px solid ${s.color}25`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 36,
-              }}>{s.icon}</div>
+              }}>
+                <s.Icon size={36} color={s.color} strokeWidth={1.6} />
+              </div>
               <div style={{ fontSize: 11, color: s.color, fontWeight: 800, marginBottom: 10, letterSpacing: '0.1em' }}>{s.num}</div>
               <h3 style={{ fontSize: 19, fontWeight: 800, color: '#111', marginBottom: 12 }}>{s.title}</h3>
               <p style={{ fontSize: 13, color: '#888', lineHeight: 1.9, maxWidth: 240, margin: '0 auto' }}>{s.desc}</p>
@@ -422,7 +389,7 @@ function StartForm() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name || !form.phone) return
-    const msg = `مرحباً فريق Shelfy 👋\n\nأريد البدء بحملة إعلانية:\n\n• الاسم: ${form.name}\n• الشركة/العلامة: ${form.company}\n• رقم التواصل: ${form.phone}\n• المدينة: ${form.city}\n• تفاصيل إضافية: ${form.notes || 'لا يوجد'}`
+    const msg = `مرحباً فريق Shelfy\n\nأريد البدء بحملة إعلانية:\n\n• الاسم: ${form.name}\n• الشركة/العلامة: ${form.company}\n• رقم التواصل: ${form.phone}\n• المدينة: ${form.city}\n• تفاصيل إضافية: ${form.notes || 'لا يوجد'}`
     window.open(`https://wa.me/966XXXXXXXXX?text=${encodeURIComponent(msg)}`, '_blank')
     setSent(true)
   }
@@ -443,61 +410,44 @@ function StartForm() {
         </div>
 
         {sent ? (
-          <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 20, padding: '48px', textAlign: 'center' }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>✅</div>
+          <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 20, padding: '48px', textAlign: 'center' }}>
+            <CheckCircle size={52} color="#4ade80" strokeWidth={1.5} style={{ margin: '0 auto 16px', display: 'block' }} />
             <h3 style={{ color: '#4ade80', fontSize: 22, fontWeight: 800, marginBottom: 8 }}>تم الإرسال!</h3>
             <p style={{ color: '#7788a0', fontSize: 15, lineHeight: 1.8 }}>فُتحت نافذة واتساب بمعلوماتك — سيتواصل معك فريقنا قريباً</p>
-            <button onClick={() => setSent(false)} style={{ marginTop: 20, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', padding: '10px 24px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', fontSize: 14 }}>
+            <button onClick={() => setSent(false)} style={{ marginTop: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', padding: '10px 24px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', fontSize: 14 }}>
               إرسال طلب آخر
             </button>
           </div>
         ) : (
           <form onSubmit={submit} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '36px 32px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>
-                  الاسم الكامل <span style={{ color: '#f43f5e' }}>*</span>
-                </label>
-                <input
-                  required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="محمد صالح"
-                  style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                  onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>
-                  اسم الشركة / العلامة التجارية
-                </label>
-                <input
-                  value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-                  placeholder="شركة المثال"
-                  style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                  onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>
-                  رقم الواتساب <span style={{ color: '#f43f5e' }}>*</span>
-                </label>
-                <input
-                  required value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  placeholder="05xxxxxxxx" dir="ltr"
-                  style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', textAlign: 'left' }}
-                  onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                  onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-                />
-              </div>
+              {[
+                { key: 'name', label: 'الاسم الكامل', placeholder: 'محمد صالح', required: true },
+                { key: 'company', label: 'اسم الشركة / العلامة التجارية', placeholder: 'شركة المثال', required: false },
+                { key: 'phone', label: 'رقم الواتساب', placeholder: '05xxxxxxxx', required: true, ltr: true },
+              ].map(f => (
+                <div key={f.key} style={f.key === 'phone' ? {} : {}}>
+                  <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>
+                    {f.label} {f.required && <span style={{ color: '#f43f5e' }}>*</span>}
+                  </label>
+                  <input
+                    required={f.required}
+                    value={(form as any)[f.key]}
+                    onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    dir={f.ltr ? 'ltr' : undefined}
+                    style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', textAlign: f.ltr ? 'left' : undefined as any }}
+                    onFocus={e => (e.target.style.borderColor = '#378ADD')}
+                    onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
+                  />
+                </div>
+              ))}
               <div>
                 <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>المدينة</label>
-                <select
-                  value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+                <select value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
                   style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: form.city ? 'white' : '#555', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
                   onFocus={e => (e.target.style.borderColor = '#378ADD')}
-                  onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-                >
+                  onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}>
                   <option value="" style={{ background: '#1a2030' }}>— اختر المدينة —</option>
                   {['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الطائف','أبها'].map(c => (
                     <option key={c} value={c} style={{ background: '#1a2030' }}>{c}</option>
@@ -507,8 +457,7 @@ function StartForm() {
             </div>
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>تفاصيل إضافية (اختياري)</label>
-              <textarea
-                value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                 rows={3} placeholder="أخبرنا عن منتجك وما تريد تحقيقه..."
                 style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box', resize: 'none' }}
                 onFocus={e => (e.target.style.borderColor = '#378ADD')}
@@ -527,10 +476,7 @@ function StartForm() {
               onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
               onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.826L.057 23.571a.5.5 0 00.611.611l5.746-1.466A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 01-5.079-1.389l-.361-.214-3.413.871.887-3.328-.235-.374A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-              </svg>
+              <MessageCircle size={20} />
               أرسل طلبي عبر واتساب
             </button>
             <p style={{ textAlign: 'center', fontSize: 12, color: '#444', marginTop: 14 }}>
@@ -546,24 +492,20 @@ function StartForm() {
 /* ─── Client Login ────────────────────────────── */
 function ClientLogin() {
   return (
-    <section id="login" style={{ background: '#080c14', padding: '60px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+    <section id="login" style={{ background: '#080c14', padding: '52px 5%', fontFamily: 'Cairo, sans-serif', direction: 'rtl', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
-        <p style={{ fontSize: 13, color: '#444', marginBottom: 16 }}>هل أنت عميل لدى Shelfy؟</p>
-        <a
-          href="/portal-login"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-            color: '#888', textDecoration: 'none',
-            padding: '12px 28px', borderRadius: 12, fontSize: 14, fontWeight: 600,
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLAnchorElement).style.color = '#ccc' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+        <p style={{ fontSize: 13, color: '#3a3f50', marginBottom: 14 }}>هل أنت عميل لدى Shelfy؟</p>
+        <a href="/portal-login" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+          color: '#555', textDecoration: 'none',
+          padding: '11px 24px', borderRadius: 12, fontSize: 13, fontWeight: 600,
+          transition: 'all 0.15s',
+        }}
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#aaa'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.12)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#555'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
         >
-          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
-          </svg>
+          <Users size={15} />
           دخول بوابة العملاء
         </a>
       </div>
@@ -579,37 +521,43 @@ function Footer() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 32, marginBottom: 36 }}>
           <div>
             <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 38, objectFit: 'contain', marginBottom: 12 }} />
-            <p style={{ fontSize: 13, color: '#3a3f50', margin: 0, lineHeight: 1.8, maxWidth: 260 }}>
+            <p style={{ fontSize: 13, color: '#2e3340', margin: 0, lineHeight: 1.8, maxWidth: 240 }}>
               شبكة الإعلانات الرقمية داخل نقاط البيع<br />المملكة العربية السعودية
             </p>
           </div>
           <div style={{ display: 'flex', gap: 48 }}>
             <div>
-              <p style={{ color: '#555', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: '0.05em' }}>التنقل</p>
+              <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: '0.05em' }}>التنقل</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[['من نحن','#about'],['الخدمات','#services'],['كيف يعمل','#how'],['ابدأ حملتك','#start']].map(([label, href]) => (
-                  <a key={label} href={href} style={{ color: '#444', textDecoration: 'none', fontSize: 13, transition: 'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#444')}>{label}</a>
+                  <a key={label} href={href} style={{ color: '#333', textDecoration: 'none', fontSize: 13, transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#333')}>{label}</a>
                 ))}
               </div>
             </div>
             <div>
-              <p style={{ color: '#555', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: '0.05em' }}>تواصل معنا</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <a href="https://wa.me/966XXXXXXXXX" target="_blank" rel="noopener noreferrer" style={{ color: '#444', textDecoration: 'none', fontSize: 13, transition: 'color 0.15s' }}
+              <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 14, letterSpacing: '0.05em' }}>تواصل معنا</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <a href="https://wa.me/966XXXXXXXXX" target="_blank" rel="noopener noreferrer"
+                  style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, transition: 'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#25D366')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#444')}>واتساب</a>
-                <a href="mailto:hello@shelfyscreens.com" style={{ color: '#444', textDecoration: 'none', fontSize: 13, transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#444')}>hello@shelfyscreens.com</a>
+                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
+                  <MessageCircle size={14} /> واتساب
+                </a>
+                <a href="mailto:hello@shelfyscreens.com"
+                  style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, transition: 'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
+                  <Mail size={14} /> hello@shelfyscreens.com
+                </a>
               </div>
             </div>
           </div>
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <p style={{ fontSize: 11, color: '#2a2f3d', margin: 0 }}>© {new Date().getFullYear()} Shelfy Screens. جميع الحقوق محفوظة.</p>
-          <Link href="/dashboard" style={{ fontSize: 11, color: '#1e2230', textDecoration: 'none' }}>لوحة التحكم</Link>
+          <p style={{ fontSize: 11, color: '#1e2230', margin: 0 }}>© {new Date().getFullYear()} Shelfy Screens. جميع الحقوق محفوظة.</p>
+          <Link href="/dashboard" style={{ fontSize: 11, color: '#1a1f2e', textDecoration: 'none' }}>لوحة التحكم</Link>
         </div>
       </div>
     </footer>
