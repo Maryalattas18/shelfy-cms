@@ -29,6 +29,9 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
   const [pwEmail, setPwEmail] = useState('')
   const [newPw, setNewPw] = useState('')
   const [pwSaving, setPwSaving] = useState(false)
+  const [aiModal, setAiModal] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState<any>(null)
 
   // ─── Effects ──────────────────────────────────
   useEffect(() => { load() }, [params.id])
@@ -77,6 +80,28 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
       showToast('تم رفع اللوغو')
     }
     setLogoUploading(false)
+  }
+
+  const analyzeWithAI = async () => {
+    setAiModal(true)
+    setAiLoading(true)
+    setAiResult(null)
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'analyze-client',
+        clientName: client.company_name,
+        clientType: client.type,
+        totalRevenue: campaigns.reduce((s: number, c: any) => s + Number(c.price || 0), 0),
+        totalCampaigns: campaigns.length,
+        activeCampaigns: campaigns.filter((c: any) => c.status === 'active').length,
+        campaigns,
+      }),
+    })
+    const data = await res.json()
+    setAiLoading(false)
+    setAiResult(data)
   }
 
   const openPwModal = () => {
@@ -140,6 +165,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
         </button>
         <h1 className="page-title flex-1">بروفايل العميل</h1>
         <div className="flex gap-2">
+          <button onClick={analyzeWithAI} className="btn btn-secondary btn-sm">✨ تحليل AI</button>
           <button onClick={openPwModal} className="btn btn-secondary btn-sm">🔑 كلمة المرور</button>
           <Link href={`/clients/${client.id}/invoice`} className="btn btn-secondary btn-sm">🖨 فاتورة</Link>
           <Link href={`/campaigns/new?clientId=${client.id}`} className="btn btn-primary btn-sm">+ حملة جديدة</Link>
@@ -186,6 +212,48 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                 {pwSaving ? 'جاري الحفظ...' : 'حفظ بيانات الدخول'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── AI Modal ───────────────────────────── */}
+      {aiModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900">✨ تحليل الذكاء الاصطناعي</h3>
+              <button onClick={() => setAiModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            {aiLoading ? (
+              <div className="flex flex-col items-center py-8 gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+                <p className="text-sm text-gray-400">يحلل الذكاء الاصطناعي بيانات العميل...</p>
+              </div>
+            ) : aiResult ? (
+              <div className="space-y-4">
+                <div style={{ background: '#f0f9ff', borderRadius: 12, padding: '12px 14px' }}>
+                  <p className="text-xs font-bold text-blue-700 mb-1">📊 التحليل</p>
+                  <p className="text-sm text-gray-700">{aiResult.analysis}</p>
+                </div>
+                <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '12px 14px' }}>
+                  <p className="text-xs font-bold text-green-700 mb-1">💡 التوصية</p>
+                  <p className="text-sm text-gray-700">{aiResult.recommendation}</p>
+                </div>
+                <div style={{ background: '#fefce8', borderRadius: 12, padding: '12px 14px' }}>
+                  <p className="text-xs font-bold text-amber-700 mb-2">💬 مسودة رسالة واتساب</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{aiResult.whatsapp}</p>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(aiResult.whatsapp); showToast('تم نسخ الرسالة') }}
+                    className="btn btn-secondary btn-sm mt-2 w-full"
+                  >
+                    نسخ الرسالة
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-gray-400 py-6">حدث خطأ، حاول مرة ثانية</p>
+            )}
+            <button className="btn btn-secondary w-full mt-4" onClick={() => setAiModal(false)}>إغلاق</button>
           </div>
         </div>
       )}

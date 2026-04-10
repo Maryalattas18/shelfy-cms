@@ -57,13 +57,29 @@ export default function ClientPortalPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [aiSummary, setAiSummary] = useState('')
 
   useEffect(() => {
     fetch(`/api/portal/${token}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) setError(d.error)
-        else setData(d)
+        else {
+          setData(d)
+          // جلب الملخص الذكي
+          fetch('/api/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'portal-summary',
+              clientName: d.client.company_name,
+              activeCampaigns: d.campaigns.filter((c: any) => c.status === 'active').length,
+              totalCampaigns: d.stats.campaignCount,
+              totalRevenue: d.campaigns.reduce((s: number, c: any) => s + Number(c.price || 0), 0),
+              campaigns: d.campaigns,
+            }),
+          }).then(r => r.json()).then(ai => { if (ai.summary) setAiSummary(ai.summary) })
+        }
         setLoading(false)
       })
       .catch(() => { setError('حدث خطأ في الاتصال'); setLoading(false) })
@@ -148,6 +164,19 @@ export default function ClientPortalPage() {
           <StatCard icon="📢" label="الحملات الإعلانية"   value={stats.campaignCount}  color="#27a376" />
           <StatCard icon="🎬" label="مقاطع إعلانية"       value={stats.mediaCount}     color="#ef9f27" />
         </div>
+
+        {/* ─── AI Summary ───────────────────────────── */}
+        {aiSummary && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fefce8, #fef9c3)',
+            border: '1px solid #fde68a',
+            borderRadius: 14, padding: '14px 18px', marginBottom: 20,
+            display: 'flex', gap: 12, alignItems: 'flex-start',
+          }}>
+            <div style={{ fontSize: 22, flexShrink: 0 }}>✨</div>
+            <p style={{ fontSize: 14, color: '#78350f', lineHeight: 1.7, margin: 0 }}>{aiSummary}</p>
+          </div>
+        )}
 
         {/* ─── Active campaigns highlight ───────────── */}
         {activeCampaigns.length > 0 && (

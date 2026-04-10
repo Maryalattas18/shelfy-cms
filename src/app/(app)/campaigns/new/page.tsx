@@ -35,6 +35,8 @@ function NewCampaignForm() {
   const [timeTo, setTimeTo] = useState('22:00')
   const [dur, setDur] = useState('30')
   const [saving, setSaving] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState<any>(null)
 
   useEffect(() => {
     Promise.all([getClients(), getMedia(), getScreens()]).then(([clients, media, screens]) => {
@@ -98,6 +100,40 @@ function NewCampaignForm() {
     router.push('/campaigns')
   }
 
+  const suggestWithAI = async () => {
+    if (!form.clientId) return alert('اختر العميل أولاً')
+    const client = clientsList.find(c => c.id === form.clientId)
+    setAiLoading(true)
+    setAiSuggestion(null)
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'suggest-campaign',
+        clientName: client?.company_name,
+        clientType: client?.type,
+        startDate: form.start || 'غير محدد',
+        endDate: form.end || 'غير محدد',
+      }),
+    })
+    const data = await res.json()
+    setAiLoading(false)
+    if (data.name) {
+      setAiSuggestion(data)
+    }
+  }
+
+  const applyAISuggestion = () => {
+    if (!aiSuggestion) return
+    setForm(f => ({
+      ...f,
+      name: aiSuggestion.name || f.name,
+      priority: aiSuggestion.priority || f.priority,
+      notes: aiSuggestion.message ? `الرسالة الإعلانية: ${aiSuggestion.message}` : f.notes,
+    }))
+    setAiSuggestion(null)
+  }
+
   const toggleMedia = (id: string) => setSelMedia(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
   const toggleScreen = (id: string) => setSelScreens(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
   const toggleDay = (d: string) => setSelDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])
@@ -128,10 +164,42 @@ function NewCampaignForm() {
 
       {step === 0 && (
         <div className="card p-5">
+          {/* AI Suggestion Box */}
+          {aiSuggestion && (
+            <div style={{ background: 'linear-gradient(135deg, #eef6ff, #f0f9ff)', border: '1px solid #bfdbfe', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
+              <div className="flex justify-between items-start mb-2">
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#1d4ed8' }}>✨ اقتراح الذكاء الاصطناعي</p>
+                <button onClick={() => setAiSuggestion(null)} style={{ fontSize: 16, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                <div><span className="text-gray-500">الاسم: </span><strong>{aiSuggestion.name}</strong></div>
+                <div><span className="text-gray-500">الأولوية: </span><strong>{aiSuggestion.priority === 'high' ? 'عالية' : 'عادية'}</strong></div>
+                <div className="col-span-2"><span className="text-gray-500">الرسالة: </span><strong>{aiSuggestion.message}</strong></div>
+                {aiSuggestion.reason && <div className="col-span-2 text-xs text-gray-400">{aiSuggestion.reason}</div>}
+              </div>
+              <button onClick={applyAISuggestion} className="btn btn-primary btn-sm w-full">تطبيق الاقتراح</button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="label">اسم الحملة *</label>
-              <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: رمضان 2026" />
+              <div className="flex gap-2">
+                <input className="input flex-1" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="مثال: رمضان 2026" />
+                <button
+                  onClick={suggestWithAI}
+                  disabled={aiLoading || !form.clientId}
+                  title="اقتراح بالذكاء الاصطناعي"
+                  style={{
+                    padding: '0 12px', borderRadius: 10, border: '1px solid #bfdbfe',
+                    background: aiLoading ? '#f1f5f9' : '#eff6ff',
+                    color: '#3b82f6', fontSize: 16, cursor: aiLoading || !form.clientId ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}
+                >
+                  {aiLoading ? '⏳' : '✨'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="label">العميل *</label>
