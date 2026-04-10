@@ -188,7 +188,7 @@ function Stats() {
   const ref = useRef<HTMLElement>(null!)
   const vis = useVisible(ref)
   const s1 = useCountUp(50, vis)
-  const s2 = useCountUp(200, vis)
+  const s2 = useCountUp(16, vis)
   const s3 = useCountUp(1500000, vis)
   const s4 = useCountUp(98, vis)
 
@@ -197,7 +197,7 @@ function Stats() {
       <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
         {[
           { value: s1,       suffix: '+', label: 'ميني ماركت',    sub: 'شريك في شبكة Shelfy',     color: '#378ADD', bg: '#e6f1fb', icon: '🏪' },
-          { value: s2,       suffix: '+', label: 'شاشة إعلانية',  sub: 'منتشرة في المملكة',        color: '#00c9a7', bg: '#e6fbf7', icon: '📺' },
+          { value: s2,       suffix: '',  label: 'ساعة بث يومياً', sub: 'إعلانك يعمل طوال اليوم',   color: '#00c9a7', bg: '#e6fbf7', icon: '⏱' },
           { value: s3,       suffix: '+', label: 'مشاهدة شهرياً', sub: 'مستهلك يرى إعلانك',       color: '#f59e0b', bg: '#fef9e6', icon: '👁' },
           { value: s4,       suffix: '%', label: 'رضا العملاء',   sub: 'نسبة رضا العملاء العام',   color: '#a78bfa', bg: '#f3f0fe', icon: '⭐' },
         ].map(s => (
