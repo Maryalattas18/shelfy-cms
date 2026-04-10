@@ -194,7 +194,7 @@ export default function ClientPortalPage() {
       {/* ─── Top Bar ─────────────────────────────────── */}
       <div style={{ background: '#0e1117', borderBottom: '1px solid #1e2433', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 48, objectFit: 'contain' }} />
+          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 48, objectFit: 'contain', mixBlendMode: 'screen' }} />
         </div>
         <a
           href={`https://wa.me/966XXXXXXXXX?text=${whatsappMsg}`}

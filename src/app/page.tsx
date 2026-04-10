@@ -83,7 +83,7 @@ function Navbar() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         fontFamily: 'Cairo, sans-serif', direction: 'rtl',
       }}>
-        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 38, objectFit: 'contain' }} />
+        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 38, objectFit: 'contain', mixBlendMode: 'screen' }} />
 
         {isMobile ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -281,7 +281,7 @@ function About() {
             { Icon: Store,    title: 'ميني ماركت',     value: '50+',  color: '#378ADD', bg: '#e6f1fb' },
             { Icon: MapPin,   title: 'مدن في المملكة', value: '8+',   color: '#00c9a7', bg: '#e6fbf7' },
             { Icon: Megaphone,title: 'حملة إعلانية',  value: '200+', color: '#f59e0b', bg: '#fef9e6' },
-            { Icon: Award,    title: 'سنوات خبرة',    value: '3+',   color: '#a78bfa', bg: '#f3f0fe' },
+            { Icon: Award,    title: 'دعم متواصل',    value: '24/7', color: '#a78bfa', bg: '#f3f0fe' },
           ].map(c => (
             <div key={c.title} style={{ background: c.bg, borderRadius: 16, padding: isMobile ? '20px 16px' : '24px 20px', textAlign: 'center', border: `1px solid ${c.color}25` }}>
               <c.Icon size={26} color={c.color} strokeWidth={1.8} style={{ margin: '0 auto 8px', display: 'block' }} />
@@ -467,7 +467,7 @@ function Footer() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: isMobile ? 32 : 48, marginBottom: 28 }}>
           <div>
-            <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 36, objectFit: 'contain', marginBottom: 10 }} />
+            <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 36, objectFit: 'contain', marginBottom: 10, mixBlendMode: 'screen' }} />
             <p style={{ fontSize: 13, color: '#2e3340', margin: 0, lineHeight: 1.8 }}>شبكة الإعلانات الرقمية داخل نقاط البيع<br />المملكة العربية السعودية</p>
           </div>
           <div style={{ display: 'flex', gap: isMobile ? 32 : 48, flexWrap: 'wrap' }}>

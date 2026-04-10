@@ -55,7 +55,7 @@ function PortalLoginForm() {
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 52, objectFit: 'contain' }} />
+          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 52, objectFit: 'contain', mixBlendMode: 'screen' }} />
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: 32 }}>

@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 52, objectFit: 'contain' }} />
+          <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 52, objectFit: 'contain', mixBlendMode: 'screen' }} />
         </div>
 
         {/* Card */}
