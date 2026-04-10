@@ -31,6 +31,27 @@ export default function PlayerPage() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mediaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const wakeLockRef = useRef<any>(null)
+
+  // ─── Wake Lock (منع الشاشة من النوم) ─────────────────
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen')
+        }
+      } catch {}
+    }
+    requestWakeLock()
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') requestWakeLock()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      wakeLockRef.current?.release()
+    }
+  }, [])
 
   // ─── Clock ───────────────────────────────────────────
   useEffect(() => {
@@ -257,21 +278,18 @@ export default function PlayerPage() {
 
       {/* Bottom Bar */}
       <div style={S.bottomBar}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={S.dot} />
-          <span style={{ color: '#ffffff99', fontSize: 10, fontFamily: 'monospace', letterSpacing: 2 }}>
-            {pairCode}
-          </span>
-        </div>
+        {/* نقطة خضراء فقط — الكود مخفي */}
+        <span style={S.dot} />
+        {/* مؤشر الإعلانات — خفيف وصغير */}
         {playlist.length > 1 && (
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 3, opacity: 0.35 }}>
             {playlist.map((_, i) => (
               <div key={i} style={{
-                width: i === currentIndex ? 16 : 6,
-                height: 6,
-                borderRadius: 3,
-                background: i === currentIndex ? '#fff' : '#ffffff33',
-                transition: 'width 0.3s ease, background 0.3s ease'
+                width: i === currentIndex ? 12 : 4,
+                height: 3,
+                borderRadius: 2,
+                background: i === currentIndex ? '#fff' : '#ffffff88',
+                transition: 'width 0.3s ease',
               }} />
             ))}
           </div>
@@ -334,13 +352,15 @@ const S: Record<string, React.CSSProperties> = {
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 12,
-    left: 16,
-    right: 16,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: '20px 14px 10px',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
     zIndex: 10,
+    background: 'linear-gradient(to top, rgba(0,0,0,0.18) 0%, transparent 100%)',
   },
   dot: {
     display: 'inline-block',

@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getCampaigns, getCampaignMedia, getCampaignSchedules, updateCampaign, deleteCampaign_ } from '@/lib/supabase'
+import { getCampaigns, getCampaignMedia, getCampaignSchedules, getMedia, updateCampaign, deleteCampaign_, createCampaignMedia, uploadMedia } from '@/lib/supabase'
 
 const STATUS_MAP: Record<string, [string, string]> = {
   active:    ['badge-green', 'نشطة'],
@@ -15,35 +15,55 @@ const CODE_TO_DAY: Record<string, string> = {
   wed: 'الأربعاء', thu: 'الخميس', fri: 'الجمعة', sat: 'السبت'
 }
 
+function timeAgo(ts: string) {
+  const diff = Date.now() - new Date(ts).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'الآن'
+  if (mins < 60) return `منذ ${mins} دقيقة`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `منذ ${hrs} ساعة`
+  const days = Math.floor(hrs / 24)
+  return `منذ ${days} يوم`
+}
+
 export default function CampaignDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [campaign, setCampaign] = useState<any>(null)
   const [media, setMedia] = useState<any[]>([])
   const [schedules, setSchedules] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
+  const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [toast, setToast] = useState('')
 
+  // ─── Add Media Modal ───
+  const [addMediaOpen, setAddMediaOpen] = useState(false)
+  const [allMedia, setAllMedia] = useState<any[]>([])
+  const [selectedNewMedia, setSelectedNewMedia] = useState<string[]>([])
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [addingMedia, setAddingMedia] = useState(false)
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
-  useEffect(() => {
-    const load = async () => {
-      const [allCamps, cm, sc, st] = await Promise.all([
-        getCampaigns(),
-        getCampaignMedia(params.id),
-        getCampaignSchedules(params.id),
-        fetch(`/api/stats?type=campaign&id=${params.id}`).then(r => r.json()),
-      ])
-      const found = (allCamps as any[]).find(c => c.id === params.id)
-      setCampaign(found || null)
-      setMedia(cm as any[])
-      setSchedules(sc as any[])
-      setStats(st)
-      setLoading(false)
-    }
-    load()
-  }, [params.id])
+  const loadAll = async () => {
+    const [allCamps, cm, sc, st, lg] = await Promise.all([
+      getCampaigns(),
+      getCampaignMedia(params.id),
+      getCampaignSchedules(params.id),
+      fetch(`/api/stats?type=campaign&id=${params.id}`).then(r => r.json()),
+      fetch(`/api/campaign-logs?campaignId=${params.id}`).then(r => r.json()).catch(() => []),
+    ])
+    const found = (allCamps as any[]).find(c => c.id === params.id)
+    setCampaign(found || null)
+    setMedia(cm as any[])
+    setSchedules(sc as any[])
+    setStats(st)
+    setLogs(lg || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { loadAll() }, [params.id])
 
   const toggleStatus = async () => {
     const next = campaign.status === 'active' ? 'paused' : 'active'
@@ -58,6 +78,61 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     setWorking(true)
     await deleteCampaign_(campaign.id)
     router.push('/campaigns')
+  }
+
+  const openAddMedia = async () => {
+    const all = await getMedia() as any[]
+    // استثنِ المحتوى المضاف مسبقاً
+    const existingIds = new Set(media.map((m: any) => m.media_id || m.media?.id))
+    const clientMedia = all.filter((m: any) => m.client_id === campaign.client_id && !existingIds.has(m.id))
+    setAllMedia(clientMedia)
+    setSelectedNewMedia([])
+    setUploadFile(null)
+    setAddMediaOpen(true)
+  }
+
+  const submitAddMedia = async () => {
+    if (selectedNewMedia.length === 0 && !uploadFile) return
+    setAddingMedia(true)
+
+    let newIds = [...selectedNewMedia]
+    let uploadedNames: string[] = []
+
+    // رفع ملف جديد إذا وُجد
+    if (uploadFile) {
+      const uploaded = await uploadMedia(uploadFile, campaign.client_id)
+      if (uploaded) {
+        newIds.push(uploaded.id)
+        uploadedNames.push(uploadFile.name)
+      }
+    }
+
+    // ربط بالحملة
+    if (newIds.length > 0) {
+      await createCampaignMedia(params.id, newIds)
+
+      // أسماء الملفات المحددة
+      const selectedNames = allMedia
+        .filter((m: any) => selectedNewMedia.includes(m.id))
+        .map((m: any) => m.file_name)
+      const allNames = [...selectedNames, ...uploadedNames]
+
+      // تسجيل في سجل النشاط
+      await fetch('/api/campaign-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaign_id: params.id,
+          action: 'media_added',
+          details: { count: newIds.length, files: allNames },
+        }),
+      })
+
+      showToast(`تمت إضافة ${newIds.length} ملف للحملة`)
+      setAddMediaOpen(false)
+      loadAll()
+    }
+    setAddingMedia(false)
   }
 
   if (loading) return (
@@ -164,9 +239,13 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
       </div>
 
       {/* Media */}
-      <div className="card">
-        <div className="px-4 py-3 border-b border-gray-50">
+      <div className="card mb-5">
+        <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center">
           <p className="section-title">المحتوى الإعلاني ({media.length} ملف)</p>
+          <button onClick={openAddMedia} className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+            إضافة محتوى
+          </button>
         </div>
         {media.length === 0 ? (
           <p className="text-center py-8 text-gray-400 text-sm">لا يوجد محتوى مرتبط بهذه الحملة</p>
@@ -194,6 +273,121 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           </div>
         )}
       </div>
+
+      {/* ─── Activity Log ─── */}
+      {logs.length > 0 && (
+        <div className="card">
+          <div className="px-4 py-3 border-b border-gray-50">
+            <p className="section-title">سجل التعديلات</p>
+          </div>
+          <div className="p-4 space-y-3">
+            {logs.map((log: any) => {
+              const d = log.details || {}
+              let text = ''
+              if (log.action === 'media_added') {
+                text = `تمت إضافة ${d.count} ${d.count === 1 ? 'ملف' : 'ملفات'} على المحتوى`
+                if (d.files?.length) text += `: ${d.files.join('، ')}`
+              } else {
+                text = log.action
+              }
+              return (
+                <div key={log.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: '#e6f1fb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                    <svg viewBox="0 0 20 20" fill="#378ADD" width="13" height="13">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, color: '#333', lineHeight: 1.5 }}>{text}</p>
+                    <p style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{timeAgo(log.created_at)}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Add Media Modal ─── */}
+      {addMediaOpen && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setAddMediaOpen(false) }}>
+          <div className="modal" style={{ maxWidth: 540 }}>
+            <div className="modal-header">
+              <span className="modal-title">إضافة محتوى للحملة</span>
+              <button onClick={() => setAddMediaOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* اختيار من المكتبة */}
+            {allMedia.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 8 }}>اختر من مكتبة العميل</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                  {allMedia.map((m: any) => {
+                    const sel = selectedNewMedia.includes(m.id)
+                    return (
+                      <div key={m.id} onClick={() => setSelectedNewMedia(s => sel ? s.filter(x => x !== m.id) : [...s, m.id])}
+                        style={{
+                          border: `2px solid ${sel ? '#378ADD' : '#e5e7eb'}`,
+                          borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
+                          background: sel ? '#e6f1fb' : 'white',
+                          transition: 'border-color 0.12s',
+                        }}>
+                        <div style={{ height: 56, background: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          {m.file_type === 'image' && m.file_url
+                            ? <img src={m.file_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <span style={{ fontSize: 20 }}>🎬</span>
+                          }
+                        </div>
+                        <p style={{ fontSize: 10, color: '#555', padding: '4px 6px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{m.file_name}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+                {selectedNewMedia.length > 0 && (
+                  <p style={{ fontSize: 11, color: '#378ADD', marginTop: 6 }}>تم تحديد {selectedNewMedia.length} ملف</p>
+                )}
+              </div>
+            )}
+
+            {allMedia.length === 0 && (
+              <p style={{ fontSize: 13, color: '#aaa', marginBottom: 12, textAlign: 'center' }}>لا يوجد محتوى آخر لهذا العميل في المكتبة</p>
+            )}
+
+            {/* رفع ملف جديد */}
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 8 }}>أو ارفع ملفاً جديداً</p>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                border: '2px dashed #e0e0dc', borderRadius: 10, padding: '12px 16px',
+                cursor: 'pointer', transition: 'border-color 0.12s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#378ADD')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#e0e0dc')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" width="18" height="18">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <span style={{ fontSize: 12, color: uploadFile ? '#378ADD' : '#aaa' }}>
+                  {uploadFile ? uploadFile.name : 'اضغط لاختيار صورة أو فيديو'}
+                </span>
+                <input type="file" accept="image/*,video/*" style={{ display: 'none' }}
+                  onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setAddMediaOpen(false)} className="btn btn-secondary">إلغاء</button>
+              <button
+                onClick={submitAddMedia}
+                disabled={addingMedia || (selectedNewMedia.length === 0 && !uploadFile)}
+                className="btn btn-primary"
+              >
+                {addingMedia ? 'جاري الإضافة...' : `إضافة${selectedNewMedia.length > 0 ? ` (${selectedNewMedia.length})` : ''}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
