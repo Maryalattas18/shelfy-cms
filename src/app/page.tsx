@@ -597,11 +597,11 @@ function Footer() {
                   onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
                   <MessageCircle size={14} /> واتساب
                 </a>
-                <a href="mailto:hello@shelfyscreens.com"
+                <a href="mailto:Sshelfyscreens@gmail.com"
                   style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, transition: 'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#777')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
-                  <Mail size={14} /> hello@shelfyscreens.com
+                  <Mail size={14} /> Sshelfyscreens@gmail.com
                 </a>
               </div>
             </div>
