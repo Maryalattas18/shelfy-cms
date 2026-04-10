@@ -35,6 +35,34 @@ function useVisible(ref: React.RefObject<HTMLElement>) {
   return vis
 }
 
+/* ─── Screen Card ────────────────────────────── */
+function Screen({ label, active, gradient, children }: { label: string; active: boolean; gradient: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* إطار الشاشة */}
+      <div style={{
+        background: '#0d1117',
+        border: '2px solid rgba(255,255,255,0.08)',
+        borderRadius: 14,
+        overflow: 'hidden',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}>
+        {/* شريط علوي */}
+        <div style={{ background: '#0a0d12', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#22c55e' : '#374151' }} />
+          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 2 }} />
+        </div>
+        {/* محتوى الشاشة */}
+        <div style={{ background: gradient, minHeight: 90 }}>
+          {children}
+        </div>
+      </div>
+      {/* تسمية */}
+      <p style={{ fontSize: 9, color: '#2a3040', textAlign: 'center', margin: 0 }}>{label}</p>
+    </div>
+  )
+}
+
 /* ─── Navbar ──────────────────────────────────── */
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -143,37 +171,113 @@ function Hero() {
         </a>
       </div>
 
-      {/* Dashboard Mockup */}
-      <div style={{ marginTop: 70, position: 'relative', maxWidth: 740, width: '100%' }}>
+      {/* Screens Mockup */}
+      <div style={{ marginTop: 70, position: 'relative', maxWidth: 760, width: '100%' }}>
+
+        {/* شريط الرف */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(55,138,221,0.18), rgba(0,201,167,0.1))',
+          background: 'rgba(255,255,255,0.03)',
           border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 22, padding: 3,
-          boxShadow: '0 40px 100px rgba(0,0,0,0.6)',
+          borderRadius: 24, padding: '28px 28px 20px',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.55)',
         }}>
-          <div style={{ background: '#131820', borderRadius: 20, padding: '22px 26px' }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
-              {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
-              {[
-                { label: 'مرات العرض', value: '124,500', color: '#378ADD' },
-                { label: 'الشاشات النشطة', value: '48', color: '#00c9a7' },
-                { label: 'الحملات', value: '23', color: '#f59e0b' },
-                { label: 'العملاء', value: '17', color: '#a78bfa' },
-              ].map(s => (
-                <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '14px', border: `1px solid ${s.color}20` }}>
-                  <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>{s.label}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ height: 72, background: 'rgba(55,138,221,0.07)', borderRadius: 12, border: '1px solid rgba(55,138,221,0.1)', display: 'flex', alignItems: 'flex-end', padding: '0 16px 10px', gap: 5 }}>
-              {[30,45,35,60,75,55,80,65,70,85,60,90,72,88,95].map((h, i) => (
-                <div key={i} style={{ flex: 1, height: h * 0.55, background: `rgba(55,138,221,${0.3 + i * 0.04})`, borderRadius: '3px 3px 0 0', minWidth: 8 }} />
-              ))}
-            </div>
+
+          {/* تسمية */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+            <span style={{ fontSize: 12, color: '#4ade80', fontWeight: 600 }}>شاشات نشطة الآن</span>
+            <div style={{ flex: 1 }} />
+            <span style={{ fontSize: 11, color: '#2a3040' }}>Shelfy Network</span>
           </div>
+
+          {/* شبكة الشاشات */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+
+            {/* شاشة 1 - إعلان كبير */}
+            <div style={{ gridColumn: 'span 2' }}>
+              <Screen
+                label="ميني ماركت الرياض — شاشة الرف الأمامي"
+                active
+                gradient="linear-gradient(135deg, #185FA5 0%, #378ADD 50%, #00c9a7 100%)"
+              >
+                <div style={{ textAlign: 'center', padding: '18px 10px' }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6, letterSpacing: '0.08em' }}>عرض حصري</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: 'white', marginBottom: 4 }}>منتجك هنا</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>أمام المستهلك في لحظة الشراء</div>
+                  <div style={{ marginTop: 14, display: 'inline-block', background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '5px 16px', fontSize: 11, color: 'white', fontWeight: 700 }}>
+                    Shelfy Screens
+                  </div>
+                </div>
+              </Screen>
+            </div>
+
+            {/* شاشة 2 */}
+            <div>
+              <Screen
+                label="شاشة منطقة الدفع"
+                active
+                gradient="linear-gradient(160deg, #1a0533 0%, #6d28d9 100%)"
+              >
+                <div style={{ textAlign: 'center', padding: '12px 8px' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Monitor size={18} color="white" />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>إعلانك</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>عند الدفع</div>
+                </div>
+              </Screen>
+            </div>
+
+            {/* شاشة 3 */}
+            <div>
+              <Screen
+                label="شاشة رف المنتجات"
+                active
+                gradient="linear-gradient(160deg, #052e16 0%, #16a34a 100%)"
+              >
+                <div style={{ textAlign: 'center', padding: '12px 8px' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Target size={18} color="white" />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>استهداف</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>دقيق</div>
+                </div>
+              </Screen>
+            </div>
+
+            {/* شاشة 4 */}
+            <div>
+              <Screen
+                label="شاشة المدخل"
+                active
+                gradient="linear-gradient(160deg, #1c1404 0%, #d97706 100%)"
+              >
+                <div style={{ textAlign: 'center', padding: '12px 8px' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <TrendingUp size={18} color="white" />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>نمو</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>مستمر</div>
+                </div>
+              </Screen>
+            </div>
+
+          </div>
+
+          {/* شريط أسفلي */}
+          <div style={{ marginTop: 16, display: 'flex', gap: 6, justifyContent: 'center' }}>
+            {['الرياض','جدة','الدمام','الطائف'].map(city => (
+              <div key={city} style={{
+                background: 'rgba(55,138,221,0.1)', border: '1px solid rgba(55,138,221,0.18)',
+                borderRadius: 999, padding: '4px 12px', fontSize: 11, color: '#7ec8f5',
+                display: 'flex', alignItems: 'center', gap: 5,
+              }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e' }} />
+                {city}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
 
