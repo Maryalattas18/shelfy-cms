@@ -193,72 +193,35 @@ function Hero() {
           {/* شبكة الشاشات */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
 
-            {/* شاشة 1 - إعلان كبير */}
-            <div style={{ gridColumn: 'span 2' }}>
-              <Screen
-                label="ميني ماركت الرياض — شاشة الرف الأمامي"
-                active
-                gradient="linear-gradient(135deg, #185FA5 0%, #378ADD 50%, #00c9a7 100%)"
-              >
-                <div style={{ textAlign: 'center', padding: '24px 10px' }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: 'white', letterSpacing: '-0.02em' }}>إعلانك</div>
-                  <div style={{ marginTop: 12, display: 'inline-block', background: 'rgba(255,255,255,0.15)', borderRadius: 999, padding: '5px 16px', fontSize: 11, color: 'white', fontWeight: 700, letterSpacing: '0.05em' }}>
-                    Shelfy Screens
-                  </div>
+            <Screen label="شاشة منطقة الدفع" active gradient="linear-gradient(160deg, #1a0533 0%, #6d28d9 100%)">
+              <div style={{ textAlign: 'center', padding: '24px 8px' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Monitor size={20} color="white" />
                 </div>
-              </Screen>
-            </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>إعلانك</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>عند الدفع</div>
+              </div>
+            </Screen>
 
-            {/* شاشة 2 */}
-            <div>
-              <Screen
-                label="شاشة منطقة الدفع"
-                active
-                gradient="linear-gradient(160deg, #1a0533 0%, #6d28d9 100%)"
-              >
-                <div style={{ textAlign: 'center', padding: '12px 8px' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Monitor size={18} color="white" />
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>إعلانك</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>عند الدفع</div>
+            <Screen label="شاشة رف المنتجات" active gradient="linear-gradient(160deg, #052e16 0%, #16a34a 100%)">
+              <div style={{ textAlign: 'center', padding: '24px 8px' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Target size={20} color="white" />
                 </div>
-              </Screen>
-            </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>استهدف</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>بدقة</div>
+              </div>
+            </Screen>
 
-            {/* شاشة 3 */}
-            <div>
-              <Screen
-                label="شاشة رف المنتجات"
-                active
-                gradient="linear-gradient(160deg, #052e16 0%, #16a34a 100%)"
-              >
-                <div style={{ textAlign: 'center', padding: '12px 8px' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Target size={18} color="white" />
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>استهداف</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>دقيق</div>
+            <Screen label="شاشة المدخل" active gradient="linear-gradient(160deg, #1c1404 0%, #d97706 100%)">
+              <div style={{ textAlign: 'center', padding: '24px 8px' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <TrendingUp size={20} color="white" />
                 </div>
-              </Screen>
-            </div>
-
-            {/* شاشة 4 */}
-            <div>
-              <Screen
-                label="شاشة المدخل"
-                active
-                gradient="linear-gradient(160deg, #1c1404 0%, #d97706 100%)"
-              >
-                <div style={{ textAlign: 'center', padding: '12px 8px' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <TrendingUp size={18} color="white" />
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>نمو</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>مستمر</div>
-                </div>
-              </Screen>
-            </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>نمو</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>مستمر</div>
+              </div>
+            </Screen>
 
           </div>
 
