@@ -4,7 +4,7 @@ export const T = {
   ar: {
     /* Navbar */
     nav_about: 'من نحن', nav_services: 'الخدمات', nav_how: 'كيف يعمل',
-    nav_start: 'ابدأ حملتك', nav_start_short: 'ابدأ', nav_client_login: 'دخول العملاء',
+    nav_start: 'ابدأ حملتك', nav_start_short: 'ابدأ', nav_client_login: 'تسجيل الدخول',
     lang_btn: 'EN',
 
     /* Hero */
