@@ -26,7 +26,7 @@ function PortalLoginForm() {
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error); setLoading(false); return }
-    router.push(`/portal/${data.token}`)
+    window.location.href = `/portal/${data.token}`
   }
 
   const changePassword = async () => {
