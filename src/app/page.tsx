@@ -200,11 +200,9 @@ function Hero() {
                 active
                 gradient="linear-gradient(135deg, #185FA5 0%, #378ADD 50%, #00c9a7 100%)"
               >
-                <div style={{ textAlign: 'center', padding: '18px 10px' }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6, letterSpacing: '0.08em' }}>عرض حصري</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: 'white', marginBottom: 4 }}>منتجك هنا</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>أمام المستهلك في لحظة الشراء</div>
-                  <div style={{ marginTop: 14, display: 'inline-block', background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '5px 16px', fontSize: 11, color: 'white', fontWeight: 700 }}>
+                <div style={{ textAlign: 'center', padding: '24px 10px' }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: 'white', letterSpacing: '-0.02em' }}>إعلانك</div>
+                  <div style={{ marginTop: 12, display: 'inline-block', background: 'rgba(255,255,255,0.15)', borderRadius: 999, padding: '5px 16px', fontSize: 11, color: 'white', fontWeight: 700, letterSpacing: '0.05em' }}>
                     Shelfy Screens
                   </div>
                 </div>
@@ -264,19 +262,6 @@ function Hero() {
 
           </div>
 
-          {/* شريط أسفلي */}
-          <div style={{ marginTop: 16, display: 'flex', gap: 6, justifyContent: 'center' }}>
-            {['الرياض','جدة','الدمام','الطائف'].map(city => (
-              <div key={city} style={{
-                background: 'rgba(55,138,221,0.1)', border: '1px solid rgba(55,138,221,0.18)',
-                borderRadius: 999, padding: '4px 12px', fontSize: 11, color: '#7ec8f5',
-                display: 'flex', alignItems: 'center', gap: 5,
-              }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e' }} />
-                {city}
-              </div>
-            ))}
-          </div>
 
         </div>
       </div>
