@@ -416,13 +416,13 @@ function HowItWorks() {
 
 /* ─── Lead Form ───────────────────────────────── */
 function StartForm() {
-  const [form, setForm] = useState({ name: '', company: '', phone: '', city: '', budget: '', notes: '' })
+  const [form, setForm] = useState({ name: '', company: '', phone: '', city: '', notes: '' })
   const [sent, setSent] = useState(false)
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name || !form.phone) return
-    const msg = `مرحباً فريق Shelfy 👋\n\nأريد البدء بحملة إعلانية:\n\n• الاسم: ${form.name}\n• الشركة/العلامة: ${form.company}\n• رقم التواصل: ${form.phone}\n• المدينة: ${form.city}\n• الميزانية التقريبية: ${form.budget}\n• تفاصيل إضافية: ${form.notes || 'لا يوجد'}`
+    const msg = `مرحباً فريق Shelfy 👋\n\nأريد البدء بحملة إعلانية:\n\n• الاسم: ${form.name}\n• الشركة/العلامة: ${form.company}\n• رقم التواصل: ${form.phone}\n• المدينة: ${form.city}\n• تفاصيل إضافية: ${form.notes || 'لا يوجد'}`
     window.open(`https://wa.me/966XXXXXXXXX?text=${encodeURIComponent(msg)}`, '_blank')
     setSent(true)
   }
@@ -460,7 +460,7 @@ function StartForm() {
                 </label>
                 <input
                   required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="محمد العمري"
+                  placeholder="محمد صالح"
                   style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 11, color: 'white', fontSize: 14, fontFamily: 'Cairo, sans-serif', outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => (e.target.style.borderColor = '#378ADD')}
                   onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
@@ -503,20 +503,6 @@ function StartForm() {
                     <option key={c} value={c} style={{ background: '#1a2030' }}>{c}</option>
                   ))}
                 </select>
-              </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, color: '#8899aa', marginBottom: 7, fontWeight: 600 }}>الميزانية التقريبية للحملة</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['أقل من 5,000 ر.س', '5,000 – 15,000 ر.س', '15,000 – 30,000 ر.س', 'أكثر من 30,000 ر.س'].map(b => (
-                  <button key={b} type="button" onClick={() => setForm(f => ({ ...f, budget: b }))}
-                    style={{
-                      padding: '8px 14px', borderRadius: 10, fontSize: 12, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', transition: 'all 0.15s',
-                      background: form.budget === b ? '#378ADD' : 'rgba(255,255,255,0.05)',
-                      border: `1px solid ${form.budget === b ? '#378ADD' : 'rgba(255,255,255,0.1)'}`,
-                      color: form.budget === b ? 'white' : '#888',
-                    }}>{b}</button>
-                ))}
               </div>
             </div>
             <div style={{ marginBottom: 24 }}>
