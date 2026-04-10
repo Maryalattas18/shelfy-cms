@@ -101,10 +101,22 @@ function StarRating({ campaignId }: { campaignId: string }) {
   )
 }
 
+function useIsMobile() {
+  const [v, setV] = useState(false)
+  useEffect(() => {
+    const check = () => setV(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return v
+}
+
 /* ─── Main Portal ─────────────────────────────── */
 function PortalContent() {
   const { token } = useParams()
   const { t, dir, lang, toggle } = useLang()
+  const isMobile = useIsMobile()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -171,20 +183,20 @@ function PortalContent() {
     <div style={{ minHeight: '100vh', background: '#f7f8fa', fontFamily: 'Cairo, sans-serif', direction: dir }}>
 
       {/* ─── Top Bar ─── */}
-      <div style={{ background: '#0e1117', borderBottom: '1px solid #1e2433', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 48, objectFit: 'contain', mixBlendMode: 'screen' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ background: '#0e1117', borderBottom: '1px solid #1e2433', padding: isMobile ? '10px 14px' : '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: isMobile ? 36 : 48, objectFit: 'contain', mixBlendMode: 'screen' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
           {/* زر اللغة */}
-          <button onClick={toggle} style={{ padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#aaa' }}>
+          <button onClick={toggle} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontFamily: 'Cairo, sans-serif', fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#aaa' }}>
             {t('lang_btn')}
           </button>
           <a href={`https://wa.me/966XXXXXXXXX?text=${whatsappMsg}`} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#25D366', color: 'white', padding: '8px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: '0 2px 8px rgba(37,211,102,0.3)' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#25D366', color: 'white', padding: isMobile ? '7px 12px' : '8px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: '0 2px 8px rgba(37,211,102,0.3)' }}>
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.826L.057 23.571a.5.5 0 00.611.611l5.746-1.466A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 01-5.079-1.389l-.361-.214-3.413.871.887-3.328-.235-.374A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
             </svg>
-            {t('portal_contact')}
+            {!isMobile && t('portal_contact')}
           </a>
         </div>
       </div>
@@ -209,7 +221,7 @@ function PortalContent() {
         </div>
 
         {/* ─── Stats ─── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
           <StatCard icon="▶" label={t('portal_plays')}     value={stats.totalPlays}    color="#378ADD" />
           <StatCard icon="⏱" label={t('portal_hours')}     value={stats.totalHours}    color="#7F77DD" suffix={lang === 'ar' ? ' ساعة' : ' hrs'} />
           <StatCard icon="📢" label={t('portal_campaigns')} value={stats.campaignCount} color="#27a376" />
@@ -255,7 +267,7 @@ function PortalContent() {
                 const isActive = c.status === 'active'
                 return (
                   <div key={c.id}>
-                    <div style={{ border: `1px solid ${isActive ? '#b8e0a0' : '#ebebea'}`, background: isActive ? '#f8fdf5' : '#fafaf8', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ border: `1px solid ${isActive ? '#b8e0a0' : '#ebebea'}`, background: isActive ? '#f8fdf5' : '#fafaf8', borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{c.name}</span>
@@ -288,7 +300,7 @@ function PortalContent() {
               <span style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{t('portal_media_title')}</span>
               <span style={{ fontSize: 12, color: '#bbb', background: '#f5f5f3', padding: '3px 10px', borderRadius: 999 }}>{media.length} {t('portal_media_unit')}</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, padding: 12 }}>
               {media.map((m: any) => (
                 <div key={m.id} style={{ border: '1px solid #ebebea', borderRadius: 10, overflow: 'hidden' }}>
                   <div style={{ height: 80, background: '#f5f5f3', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>

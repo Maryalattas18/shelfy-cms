@@ -65,11 +65,23 @@ const STAT_CARDS = [
   },
 ]
 
+function useIsMobile() {
+  const [v, setV] = useState(false)
+  useEffect(() => {
+    const check = () => setV(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return v
+}
+
 export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [screens, setScreens] = useState<any[]>([])
   const [stats, setStats] = useState({ screens: { total: 0, online: 0 }, campaigns: { active: 0 }, clients: { total: 0 }, monthlyPlays: 0 })
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   const now = new Date()
   const hour = now.getHours()
@@ -119,7 +131,7 @@ export default function DashboardPage() {
     <div>
 
       {/* ─── Header ─── */}
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 0 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 3 }}>
             {greeting} 👋
@@ -140,7 +152,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Stat Cards ─── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         {STAT_CARDS.map(card => (
           <div key={card.key} style={{
             background: 'white',
@@ -180,7 +192,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Tables ─── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 
         {/* آخر الحملات */}
         <div style={{ background: 'white', border: '1px solid #ebebea', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
