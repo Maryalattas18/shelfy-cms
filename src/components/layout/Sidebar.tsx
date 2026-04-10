@@ -1,8 +1,19 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import NotificationBell from './NotificationBell'
+
+function useIsMobile() {
+  const [v, setV] = useState(false)
+  useEffect(() => {
+    const check = () => setV(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return v
+}
 
 const nav = [
   {
@@ -71,14 +82,20 @@ const settingsIcon = (
 
 export default function Sidebar() {
   const path = usePathname()
-  return (
+  const isMobile = useIsMobile()
+  const [open, setOpen] = useState(false)
+
+  // close drawer on route change
+  useEffect(() => { setOpen(false) }, [path])
+
+  const sidebarContent = (
     <aside style={{
       width: 210, flexShrink: 0,
       background: '#ffffff',
       borderLeft: '1px solid #ebebea',
       display: 'flex', flexDirection: 'column',
       minHeight: '100vh',
-      boxShadow: '1px 0 0 #f0f0ee',
+      boxShadow: isMobile ? '4px 0 24px rgba(0,0,0,0.12)' : '1px 0 0 #f0f0ee',
     }}>
       {/* Logo */}
       <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid #f0f0ee' }}>
@@ -98,7 +115,15 @@ export default function Sidebar() {
               <div style={{ fontSize: 11, color: '#b0b0aa', lineHeight: 1.2 }}>إدارة الإعلانات</div>
             </div>
           </div>
-          <NotificationBell />
+          {isMobile ? (
+            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', padding: 4, display: 'flex' }}>
+              <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          ) : (
+            <NotificationBell />
+          )}
         </div>
       </div>
 
@@ -136,6 +161,51 @@ export default function Sidebar() {
       </div>
     </aside>
   )
+
+  if (isMobile) {
+    return (
+      <>
+        {/* Hamburger button */}
+        <button
+          onClick={() => setOpen(true)}
+          style={{
+            position: 'fixed', top: 14, right: 16, zIndex: 200,
+            background: 'white', border: '1px solid #ebebea',
+            borderRadius: 10, padding: '8px 10px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }}
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" style={{ color: '#555' }}>
+            <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+          </svg>
+        </button>
+
+        {/* Backdrop */}
+        {open && (
+          <div
+            onClick={() => setOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 198,
+              background: 'rgba(0,0,0,0.35)',
+              backdropFilter: 'blur(2px)',
+            }}
+          />
+        )}
+
+        {/* Drawer */}
+        <div style={{
+          position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 199,
+          transform: open ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.25s ease',
+        }}>
+          {sidebarContent}
+        </div>
+      </>
+    )
+  }
+
+  return sidebarContent
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
