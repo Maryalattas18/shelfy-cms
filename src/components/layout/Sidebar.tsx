@@ -116,20 +116,9 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div style={{ borderTop: '1px solid #f0f0ee', padding: '6px 8px 10px' }}>
-        <button style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-          padding: '8px 10px', borderRadius: 8, border: 'none', background: 'transparent',
-          fontSize: 13, color: '#888', cursor: 'pointer', fontFamily: 'Cairo, sans-serif',
-          transition: 'background 0.1s, color 0.1s',
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f0'; (e.currentTarget as HTMLButtonElement).style.color = '#444' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#888' }}
-        >
-          <span style={{ color: '#aaa' }}>{settingsIcon}</span>
-          الإعدادات
-        </button>
+        <NavItem item={{ label: 'الإعدادات', href: '/settings', icon: settingsIcon }} active={path.startsWith('/settings')} />
         <button
-          onClick={async () => { await fetch('/api/auth/admin', { method: 'DELETE' }); window.location.href = '/admin-login' }}
+          onClick={async () => { await fetch('/api/auth/admin', { method: 'DELETE' }); window.location.href = '/' }}
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 9,
             padding: '8px 10px', borderRadius: 8, border: 'none', background: 'transparent',
