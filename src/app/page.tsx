@@ -70,9 +70,9 @@ function LangToggle({ light = false }: { light?: boolean }) {
       style={{
         padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
         fontFamily: 'Cairo, sans-serif', fontSize: 13, fontWeight: 700,
-        background: light ? 'rgba(255,255,255,0.08)' : 'rgba(55,138,221,0.12)',
-        border: `1px solid ${light ? 'rgba(255,255,255,0.15)' : 'rgba(55,138,221,0.25)'}`,
-        color: light ? '#aaa' : '#7ec8f5',
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        color: '#8899aa',
         transition: 'all 0.15s',
         letterSpacing: lang === 'ar' ? '0.03em' : 0,
       }}
@@ -134,7 +134,7 @@ function Navbar() {
                 onMouseLeave={e => (e.currentTarget.style.color = '#bbb')}>{label}</a>
             ))}
             <a href="#start" style={{ background: 'linear-gradient(135deg, #378ADD, #185FA5)', color: 'white', textDecoration: 'none', fontSize: 13, fontWeight: 700, padding: '9px 20px', borderRadius: 10, marginInlineStart: 8, boxShadow: '0 2px 12px rgba(55,138,221,0.4)' }}>{t('nav_start')}</a>
-            <a href="/portal-login" style={{ color: '#666', textDecoration: 'none', fontSize: 13, padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}>{t('nav_client_login')}</a>
+            <a href="/portal-login" style={{ color: '#8899aa', textDecoration: 'none', fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)' }}>{t('nav_client_login')}</a>
             <LangToggle />
           </div>
         )}
