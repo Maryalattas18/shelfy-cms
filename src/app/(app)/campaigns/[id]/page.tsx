@@ -1,7 +1,13 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { getCampaigns, getCampaignMedia, getCampaignSchedules, getMedia, updateCampaign, deleteCampaign_, createCampaignMedia, updateCampaignMedia, uploadMedia } from '@/lib/supabase'
+import { getCampaigns, getCampaignMedia, getCampaignSchedules, getMedia, updateCampaign, deleteCampaign_, createCampaignMedia, updateCampaignMedia, updateSchedule, deleteSchedule, uploadMedia } from '@/lib/supabase'
+
+const DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
+const DAY_TO_CODE: Record<string, string> = {
+  'السبت': 'sat', 'الأحد': 'sun', 'الاثنين': 'mon',
+  'الثلاثاء': 'tue', 'الأربعاء': 'wed', 'الخميس': 'thu', 'الجمعة': 'fri'
+}
 
 const STATUS_MAP: Record<string, [string, string]> = {
   active:    ['badge-green', 'نشطة'],
@@ -36,6 +42,16 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [toast, setToast] = useState('')
+
+  // ─── Edit Schedule Modal ───
+  const [schedEditModal, setSchedEditModal] = useState(false)
+  const [schedEditId, setSchedEditId] = useState('')
+  const [schedFrom, setSchedFrom] = useState('')
+  const [schedTo, setSchedTo] = useState('')
+  const [schedDur, setSchedDur] = useState('')
+  const [schedDays, setSchedDays] = useState<string[]>([])
+  const [schedWeight, setSchedWeight] = useState(100)
+  const [schedSaving, setSchedSaving] = useState(false)
 
   // ─── Transform Editor ───
   const [transformModal, setTransformModal] = useState<any | null>(null)
@@ -86,6 +102,39 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     setWorking(true)
     await deleteCampaign_(campaign.id)
     router.push('/campaigns')
+  }
+
+  const openSchedEdit = (s: any) => {
+    setSchedEditId(s.id)
+    setSchedFrom(s.start_time?.substring(0, 5) || '08:00')
+    setSchedTo(s.end_time?.substring(0, 5) || '22:00')
+    setSchedDur(String(s.duration_sec || 30))
+    setSchedDays((s.days_of_week || []).map((c: string) => Object.entries(DAY_TO_CODE).find(([, v]) => v === c)?.[0] || c))
+    setSchedWeight(s.weight ?? 100)
+    setSchedEditModal(true)
+  }
+
+  const saveSchedEdit = async () => {
+    if (schedDays.length === 0) return showToast('يرجى اختيار يوم واحد على الأقل')
+    setSchedSaving(true)
+    await updateSchedule(schedEditId, {
+      start_time: schedFrom,
+      end_time: schedTo,
+      duration_sec: Number(schedDur) || 30,
+      days_of_week: schedDays.map(d => DAY_TO_CODE[d]),
+      weight: schedWeight,
+    })
+    setSchedSaving(false)
+    setSchedEditModal(false)
+    showToast('تم تحديث الجدولة')
+    loadAll()
+  }
+
+  const delSched = async (id: string) => {
+    if (!confirm('حذف هذه الجدولة؟')) return
+    await deleteSchedule(id)
+    showToast('تم الحذف')
+    loadAll()
   }
 
   const updateMediaSetting = async (id: string, key: 'fit_mode' | 'object_position', value: string) => {
@@ -267,16 +316,20 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 <div key={s.id} className="bg-gray-50 rounded-lg p-3 text-xs">
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-medium text-gray-900">{s.screen?.name || '—'}</span>
-                    <span className="text-gray-400 font-mono">
-                      {s.start_time?.substring(0, 5)} – {s.end_time?.substring(0, 5)}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-400 font-mono">{s.start_time?.substring(0, 5)} – {s.end_time?.substring(0, 5)}</span>
+                      <button onClick={() => openSchedEdit(s)} className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </button>
+                      <button onClick={() => delSched(s.id)} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
                   </div>
-                  {s.screen?.location_name && (
-                    <p className="text-gray-400 mb-1">{s.screen.location_name}</p>
-                  )}
+                  {s.screen?.location_name && <p className="text-gray-400 mb-1">{s.screen.location_name}</p>}
                   <p className="text-gray-500">
                     {(s.days_of_week || []).map((d: string) => CODE_TO_DAY[d] || d).join('، ')}
-                    {' · '}{s.duration_sec} ث/إعلان
+                    {' · '}{s.duration_sec} ث/إعلان{s.weight && s.weight !== 100 ? ` · ${s.weight}%` : ''}
                   </p>
                 </div>
               ))}
@@ -374,6 +427,58 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Edit Schedule Modal ─── */}
+      {schedEditModal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setSchedEditModal(false) }}>
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <span className="modal-title">تعديل الجدولة</span>
+              <button onClick={() => setSchedEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 20 }}>×</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div><label className="label">من الساعة</label><input className="input" type="time" value={schedFrom} onChange={e => setSchedFrom(e.target.value)} /></div>
+              <div><label className="label">إلى الساعة</label><input className="input" type="time" value={schedTo} onChange={e => setSchedTo(e.target.value)} /></div>
+            </div>
+
+            <div className="mb-3">
+              <label className="label">مدة كل إعلان (ثانية)</label>
+              <input className="input w-full" type="number" min="5" max="300" value={schedDur} onChange={e => setSchedDur(e.target.value)} />
+            </div>
+
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <label className="label">نسبة الظهور</label>
+                <span className="text-sm font-bold text-primary">{schedWeight}%</span>
+              </div>
+              <input type="range" min="10" max="100" step="5" value={schedWeight}
+                onChange={e => setSchedWeight(Number(e.target.value))}
+                className="w-full accent-primary" />
+            </div>
+
+            <div className="mb-5">
+              <label className="label">أيام العرض</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {DAYS.map(d => (
+                  <span key={d} onClick={() => setSchedDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])}
+                    className={`px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all border select-none
+                      ${schedDays.includes(d) ? 'bg-primary-light text-primary border-primary font-medium' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                    {d}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button className="btn btn-secondary flex-1" onClick={() => setSchedEditModal(false)}>إلغاء</button>
+              <button className="btn btn-primary flex-1" onClick={saveSchedEdit} disabled={schedSaving}>
+                {schedSaving ? 'جاري الحفظ...' : 'حفظ'}
+              </button>
+            </div>
           </div>
         </div>
       )}
