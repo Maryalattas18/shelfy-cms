@@ -141,6 +141,10 @@ export async function deleteSchedule(id: string) {
   return await db('delete', 'schedules', null, id)
 }
 
+export async function updateSchedule(id: string, updates: any) {
+  return await db('update', 'schedules', updates, id)
+}
+
 // ─── Screens ────────────────────────────────────────────────
 export async function getScreens() {
   return await db('select', 'screens') || []
