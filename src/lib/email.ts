@@ -16,7 +16,7 @@ export async function sendCampaignLaunchEmail({
   await resend.emails.send({
     from: FROM,
     to,
-    reply_to: REPLY_TO,
+    replyTo: REPLY_TO,
     subject: `🎉 حملتك "${campaignName}" انطلقت! · Your campaign is LIVE!`,
     html: `
 <div style="background:#f7f8fa;padding:32px 16px;font-family:Arial,sans-serif">
@@ -113,7 +113,7 @@ export async function sendCampaignEndEmail({
   await resend.emails.send({
     from: FROM,
     to,
-    reply_to: REPLY_TO,
+    replyTo: REPLY_TO,
     subject: `✅ تقرير حملة "${campaignName}" · Campaign Report`,
     attachments: [{
       filename: `Shelfy-Report-${campaignName.replace(/\s+/g, '-')}.pdf`,
