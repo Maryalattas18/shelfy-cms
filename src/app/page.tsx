@@ -412,7 +412,7 @@ function StartForm() {
     const msg = lang === 'ar'
       ? `مرحباً فريق Shelfy\n\nأريد البدء بحملة إعلانية:\n\n• الاسم: ${form.name}\n• الشركة/العلامة: ${form.company}\n• رقم التواصل: ${form.phone}\n• المدينة: ${form.city}\n• تفاصيل إضافية: ${form.notes || 'لا يوجد'}`
       : `Hello Shelfy Team\n\nI'd like to start an ad campaign:\n\n• Name: ${form.name}\n• Company/Brand: ${form.company}\n• Contact: ${form.phone}\n• City: ${form.city}\n• Details: ${form.notes || 'N/A'}`
-    window.open(`https://wa.me/966XXXXXXXXX?text=${encodeURIComponent(msg)}`, '_blank')
+    window.open(`https://wa.me/966502112743?text=${encodeURIComponent(msg)}`, '_blank')
     setSent(true)
   }
 
@@ -523,7 +523,7 @@ function Footer() {
             <div>
               <p style={{ color: '#444', fontSize: 12, fontWeight: 700, marginBottom: 12, letterSpacing: '0.05em' }}>{t('footer_contact')}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <a href="https://wa.me/966XXXXXXXXX" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <a href="https://wa.me/966502112743" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <MessageCircle size={13} /> {t('footer_wa')}
                 </a>
                 <a href="mailto:Sshelfyscreens@gmail.com" style={{ color: '#333', textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
