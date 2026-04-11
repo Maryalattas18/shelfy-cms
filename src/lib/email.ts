@@ -1,7 +1,8 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = 'Shelfy Screens <campaigns@shelfyscreens.com>'
+const FROM = 'Shelfy Screens <noreply@shelfyscreens.com>'
+const REPLY_TO = 'Sshelfyscreens@gmail.com'
 
 /* ─── Email 1: Campaign Launch + Login Credentials ─── */
 export async function sendCampaignLaunchEmail({
@@ -15,6 +16,7 @@ export async function sendCampaignLaunchEmail({
   await resend.emails.send({
     from: FROM,
     to,
+    reply_to: REPLY_TO,
     subject: `🎉 حملتك "${campaignName}" انطلقت! · Your campaign is LIVE!`,
     html: `
 <div style="background:#f7f8fa;padding:32px 16px;font-family:Arial,sans-serif">
@@ -111,6 +113,7 @@ export async function sendCampaignEndEmail({
   await resend.emails.send({
     from: FROM,
     to,
+    reply_to: REPLY_TO,
     subject: `✅ تقرير حملة "${campaignName}" · Campaign Report`,
     attachments: [{
       filename: `Shelfy-Report-${campaignName.replace(/\s+/g, '-')}.pdf`,
