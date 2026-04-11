@@ -83,6 +83,10 @@ export async function deleteCampaign_(id: string) {
 }
 
 // ─── Campaign Media ─────────────────────────────────────────
+export async function updateCampaignMedia(id: string, updates: { fit_mode?: string; object_position?: string }) {
+  return await db('update', 'campaign_media', updates, id)
+}
+
 export async function createCampaignMedia(campaignId: string, mediaIds: string[]) {
   const records = mediaIds.map((mediaId, i) => ({
     campaign_id: campaignId,

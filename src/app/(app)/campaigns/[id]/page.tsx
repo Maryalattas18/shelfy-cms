@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getCampaigns, getCampaignMedia, getCampaignSchedules, getMedia, updateCampaign, deleteCampaign_, createCampaignMedia, uploadMedia } from '@/lib/supabase'
+import { getCampaigns, getCampaignMedia, getCampaignSchedules, getMedia, updateCampaign, deleteCampaign_, createCampaignMedia, updateCampaignMedia, uploadMedia } from '@/lib/supabase'
 
 const STATUS_MAP: Record<string, [string, string]> = {
   active:    ['badge-green', 'نشطة'],
@@ -38,6 +38,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [toast, setToast] = useState('')
 
   // ─── Add Media Modal ───
+  const [expandedMedia, setExpandedMedia] = useState<string | null>(null)
   const [addMediaOpen, setAddMediaOpen] = useState(false)
   const [allMedia, setAllMedia] = useState<any[]>([])
   const [selectedNewMedia, setSelectedNewMedia] = useState<string[]>([])
@@ -78,6 +79,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     setWorking(true)
     await deleteCampaign_(campaign.id)
     router.push('/campaigns')
+  }
+
+  const updateMediaSetting = async (id: string, key: 'fit_mode' | 'object_position', value: string) => {
+    setMedia(prev => prev.map(m => m.id === id ? { ...m, [key]: value } : m))
+    await updateCampaignMedia(id, { [key]: value })
   }
 
   const openAddMedia = async () => {
@@ -251,25 +257,74 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
           <p className="text-center py-8 text-gray-400 text-sm">لا يوجد محتوى مرتبط بهذه الحملة</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4">
-            {media.map((m: any, i: number) => (
-              <div key={m.id} className="border border-gray-100 rounded-xl overflow-hidden">
-                <div className="h-20 bg-gray-50 flex items-center justify-center relative">
-                  {m.media?.file_type === 'image' && m.media?.file_url ? (
-                    <img src={m.media.file_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center">
-                      <div className="text-2xl">{m.media?.file_type === 'video' ? '🎬' : '🖼️'}</div>
-                      <p className="text-xs text-gray-400">{m.media?.duration_sec} ث</p>
+            {media.map((m: any, i: number) => {
+              const isExpanded = expandedMedia === m.id
+              const fitMode = m.fit_mode || 'cover'
+              const objPos = m.object_position || 'center center'
+              const positions = [
+                ['right top','center top','left top'],
+                ['right center','center center','left center'],
+                ['right bottom','center bottom','left bottom'],
+              ]
+              return (
+                <div key={m.id} className="border border-gray-100 rounded-xl overflow-hidden">
+                  {/* Thumbnail */}
+                  <div
+                    className="h-24 bg-gray-50 flex items-center justify-center relative cursor-pointer"
+                    onClick={() => setExpandedMedia(isExpanded ? null : m.id)}>
+                    {m.media?.file_type === 'image' && m.media?.file_url ? (
+                      <img src={m.media.file_url} alt="" className="w-full h-full"
+                        style={{ objectFit: fitMode as any, objectPosition: objPos }} />
+                    ) : (
+                      <div className="text-center">
+                        <div className="text-2xl">{m.media?.file_type === 'video' ? '🎬' : '🖼️'}</div>
+                        <p className="text-xs text-gray-400">{m.media?.duration_sec} ث</p>
+                      </div>
+                    )}
+                    <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs rounded px-1">{i + 1}</div>
+                    <div className="absolute bottom-1 left-1 text-xs text-white bg-black bg-opacity-40 rounded px-1">
+                      {fitMode === 'cover' ? 'تعبئة' : fitMode === 'contain' ? 'احتواء' : 'مد'}
                     </div>
-                  )}
-                  <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs rounded px-1">{i + 1}</div>
+                  </div>
+
+                  <div className="p-2">
+                    <p className="text-xs text-gray-700 truncate mb-1">{m.media?.file_name}</p>
+
+                    {/* Controls */}
+                    {isExpanded && (
+                      <div className="mt-2 space-y-2 border-t border-gray-50 pt-2">
+                        {/* Fit Mode */}
+                        <div className="flex gap-1">
+                          {[['cover','تعبئة'],['contain','احتواء'],['fill','مد']].map(([v, ar]) => (
+                            <button key={v} onClick={() => updateMediaSetting(m.id, 'fit_mode', v)}
+                              className={`flex-1 text-xs py-1 rounded border transition-all
+                                ${fitMode === v ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                              {ar}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Position Grid — يظهر فقط عند cover */}
+                        {fitMode === 'cover' && (
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">موضع الصورة</p>
+                            <div className="grid grid-cols-3 gap-0.5" style={{ width: 66 }}>
+                              {positions.map((row, ri) => row.map((pos, ci) => (
+                                <button key={pos} onClick={() => updateMediaSetting(m.id, 'object_position', pos)}
+                                  style={{ width: 20, height: 20, borderRadius: 3, border: '1.5px solid', transition: 'all 0.1s',
+                                    borderColor: objPos === pos ? '#378ADD' : '#e5e7eb',
+                                    background: objPos === pos ? '#e6f1fb' : '#f9f9f7' }}
+                                />
+                              )))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="p-2">
-                  <p className="text-xs text-gray-700 truncate">{m.media?.file_name}</p>
-                  <p className="text-xs text-gray-400">{m.media?.file_size_mb} MB</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

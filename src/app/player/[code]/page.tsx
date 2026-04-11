@@ -8,6 +8,8 @@ type MediaItem = {
   file_url: string
   file_type: 'video' | 'image'
   duration_sec: number
+  fit_mode?: string
+  object_position?: string
 }
 
 type PlayerState = 'loading' | 'error' | 'idle' | 'playing'
@@ -270,7 +272,7 @@ export default function PlayerPage() {
               key={`img-${currentIndex}`}
               src={current.file_url}
               alt=""
-              style={{ ...S.media, objectFit: fitMode }}
+              style={{ ...S.media, objectFit: (current.fit_mode || fitMode) as any, objectPosition: current.object_position || 'center center' }}
             />
           ) : (
             <video
@@ -280,7 +282,7 @@ export default function PlayerPage() {
               autoPlay
               muted
               playsInline
-              style={{ ...S.media, objectFit: fitMode }}
+              style={{ ...S.media, objectFit: (current.fit_mode || fitMode) as any, objectPosition: current.object_position || 'center center' }}
               onEnded={() => advance(currentIndex, playlist, screenId)}
               onError={() => {
                 if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
