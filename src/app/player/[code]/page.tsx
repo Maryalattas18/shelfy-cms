@@ -269,26 +269,19 @@ export default function PlayerPage() {
         )}
       </div>
 
-      {/* Progress Bar */}
-      {current?.file_type === 'image' && (
-        <div style={S.progressTrack}>
-          <div style={{ ...S.progressFill, width: `${progress}%` }} />
-        </div>
-      )}
-
       {/* Bottom Bar */}
       <div style={S.bottomBar}>
-        {/* نقطة خضراء فقط — الكود مخفي */}
+        {/* نقطة خضراء صغيرة جداً */}
         <span style={S.dot} />
-        {/* مؤشر الإعلانات — خفيف وصغير */}
+        {/* مؤشر الإعلانات — خفيف جداً */}
         {playlist.length > 1 && (
-          <div style={{ display: 'flex', gap: 3, opacity: 0.35 }}>
+          <div style={{ display: 'flex', gap: 2, opacity: 0.18 }}>
             {playlist.map((_, i) => (
               <div key={i} style={{
-                width: i === currentIndex ? 12 : 4,
-                height: 3,
-                borderRadius: 2,
-                background: i === currentIndex ? '#fff' : '#ffffff88',
+                width: i === currentIndex ? 8 : 3,
+                height: 2,
+                borderRadius: 1,
+                background: '#fff',
                 transition: 'width 0.3s ease',
               }} />
             ))}
@@ -336,20 +329,6 @@ const S: Record<string, React.CSSProperties> = {
     objectFit: 'cover',
     display: 'block',
   },
-  progressTrack: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    background: '#ffffff22',
-    zIndex: 10,
-  },
-  progressFill: {
-    height: '100%',
-    background: '#fff',
-    transition: 'width 0.3s linear',
-  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -364,12 +343,12 @@ const S: Record<string, React.CSSProperties> = {
   },
   dot: {
     display: 'inline-block',
-    width: 7,
-    height: 7,
+    width: 4,
+    height: 4,
     borderRadius: '50%',
     background: '#22c55e',
-    boxShadow: '0 0 6px #22c55e',
-    animation: 'pulse 2s infinite',
+    boxShadow: '0 0 4px #22c55e',
+    opacity: 0.6,
   },
   label: {
     color: '#333',
