@@ -15,85 +15,7 @@ export async function GET() {
   const supabase = getSupabase()
   const today = new Date().toISOString().split('T')[0]
 
-  // ─── 1. حملات انتهت اليوم ────────────────────
-  const { data: ended } = await supabase
-    .from('campaigns')
-    .select('id, name, start_date, end_date, price, client_id, clients(company_name, phone, email, portal_token)')
-    .eq('status', 'active')
-    .lte('end_date', today)
-
-  if (ended && ended.length > 0) {
-    for (const c of ended) {
-      await supabase.from('campaigns').update({ status: 'ended' }).eq('id', c.id)
-
-      const client = (c as any).clients
-      const waMsg = client?.phone
-        ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nنود إعلامكم بأن حملتكم الإعلانية "${c.name}" قد اكتملت بنجاح.\n\nيسعدنا التواصل معكم لمناقشة تجديد الحملة أو إطلاق حملة جديدة.\n\nفريق Shelfy Screens`)
-        : null
-
-      if (client?.email) {
-        try {
-          // جلب إحصائيات الحملة
-          const { data: cm } = await supabase.from('campaign_media').select('media_id').eq('campaign_id', c.id)
-          const mediaIds = (cm || []).map((x: any) => x.media_id)
-          let plays = 0, totalSec = 0
-          if (mediaIds.length > 0) {
-            const { data: logs } = await supabase.from('play_logs').select('duration_sec').in('media_id', mediaIds)
-            plays = (logs || []).length
-            totalSec = (logs || []).reduce((s: number, l: any) => s + (l.duration_sec || 0), 0)
-          }
-
-          // جلب الشاشات
-          const { data: schedules } = await supabase.from('schedules').select('screen:screens(name,location_name)').eq('campaign_id', c.id)
-          const screens = (schedules || []).map((s: any) => s.screen).filter(Boolean)
-
-          const hours = parseFloat((totalSec / 3600).toFixed(1))
-          const portalUrl = client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login'
-
-          // توليد PDF (اختياري - لا يوقف الإيميل لو فشل)
-          let pdfBuffer: Buffer | undefined
-          try {
-            pdfBuffer = await generateCampaignPdf({
-              clientName: client.company_name,
-              campaignName: c.name,
-              startDate: c.start_date,
-              endDate: c.end_date,
-              plays, hours,
-              screensCount: screens.length,
-              screens,
-              mediaCount: mediaIds.length,
-              price: c.price,
-            })
-          } catch (pdfErr) {
-            console.error('PDF generation failed (email will still send):', pdfErr)
-          }
-
-          await sendCampaignEndEmail({
-            to: client.email,
-            clientName: client.company_name,
-            campaignName: c.name,
-            startDate: c.start_date,
-            endDate: c.end_date,
-            plays, hours,
-            screensCount: screens.length,
-            mediaCount: mediaIds.length,
-            portalUrl,
-            pdfBuffer,
-            price: c.price,
-          })
-        } catch (e) { console.error('end email error', e) }
-      }
-
-      await supabase.from('notifications').insert({
-        type: 'campaign_ended',
-        title: `انتهت حملة "${c.name}"`,
-        body: `عميل: ${client?.company_name || '—'} · يمكنك تجديدها أو أرشفتها`,
-        meta: waMsg && client?.phone ? { whatsapp: `https://wa.me/${client.phone.replace(/\D/g,'')}?text=${waMsg}` } : null,
-      })
-    }
-  }
-
-  // ─── 2. حملات تبدأ اليوم ─────────────────────
+  // ─── 1. حملات تبدأ اليوم (أولاً دائماً) ────────
   const { data: starting } = await supabase
     .from('campaigns')
     .select('id, name, start_date, end_date, client_id, clients(id, company_name, phone, email, portal_token, portal_password_plain)')
@@ -133,6 +55,66 @@ export async function GET() {
         type: 'campaign_starting',
         title: `حملة "${c.name}" بدأت اليوم`,
         body: `عميل: ${client?.company_name || '—'} · تأكد من رفع المحتوى وجدولة الشاشات`,
+        meta: waMsg && client?.phone ? { whatsapp: `https://wa.me/${client.phone.replace(/\D/g,'')}?text=${waMsg}` } : null,
+      })
+    }
+  }
+
+  // ─── 2. حملات انتهت اليوم ────────────────────
+  const { data: ended } = await supabase
+    .from('campaigns')
+    .select('id, name, start_date, end_date, price, client_id, clients(company_name, phone, email, portal_token)')
+    .eq('status', 'active')
+    .lte('end_date', today)
+
+  if (ended && ended.length > 0) {
+    for (const c of ended) {
+      await supabase.from('campaigns').update({ status: 'ended' }).eq('id', c.id)
+
+      const client = (c as any).clients
+      const waMsg = client?.phone
+        ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nنود إعلامكم بأن حملتكم الإعلانية "${c.name}" قد اكتملت بنجاح.\n\nيسعدنا التواصل معكم لمناقشة تجديد الحملة أو إطلاق حملة جديدة.\n\nفريق Shelfy Screens`)
+        : null
+
+      if (client?.email) {
+        try {
+          const { data: cm } = await supabase.from('campaign_media').select('media_id').eq('campaign_id', c.id)
+          const mediaIds = (cm || []).map((x: any) => x.media_id)
+          let plays = 0, totalSec = 0
+          if (mediaIds.length > 0) {
+            const { data: logs } = await supabase.from('play_logs').select('duration_sec').in('media_id', mediaIds)
+            plays = (logs || []).length
+            totalSec = (logs || []).reduce((s: number, l: any) => s + (l.duration_sec || 0), 0)
+          }
+
+          const { data: schedules } = await supabase.from('schedules').select('screen:screens(name,location_name)').eq('campaign_id', c.id)
+          const screens = (schedules || []).map((s: any) => s.screen).filter(Boolean)
+          const hours = parseFloat((totalSec / 3600).toFixed(1))
+          const portalUrl = client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login'
+
+          let pdfBuffer: Buffer | undefined
+          try {
+            pdfBuffer = await generateCampaignPdf({
+              clientName: client.company_name, campaignName: c.name,
+              startDate: c.start_date, endDate: c.end_date,
+              plays, hours, screensCount: screens.length, screens,
+              mediaCount: mediaIds.length, price: c.price,
+            })
+          } catch (pdfErr) { console.error('PDF generation failed:', pdfErr) }
+
+          await sendCampaignEndEmail({
+            to: client.email, clientName: client.company_name, campaignName: c.name,
+            startDate: c.start_date, endDate: c.end_date,
+            plays, hours, screensCount: screens.length, mediaCount: mediaIds.length,
+            portalUrl, pdfBuffer, price: c.price,
+          })
+        } catch (e) { console.error('end email error', e) }
+      }
+
+      await supabase.from('notifications').insert({
+        type: 'campaign_ended',
+        title: `انتهت حملة "${c.name}"`,
+        body: `عميل: ${client?.company_name || '—'} · يمكنك تجديدها أو أرشفتها`,
         meta: waMsg && client?.phone ? { whatsapp: `https://wa.me/${client.phone.replace(/\D/g,'')}?text=${waMsg}` } : null,
       })
     }
