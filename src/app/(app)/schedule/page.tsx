@@ -32,6 +32,7 @@ export default function SchedulePage() {
   const [from, setFrom] = useState('08:00')
   const [to, setTo] = useState('22:00')
   const [dur, setDur] = useState('30')
+  const [weight, setWeight] = useState(100)
   const [selDays, setSelDays] = useState(['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'])
 
   // Edit modal
@@ -41,6 +42,7 @@ export default function SchedulePage() {
   const [editTo, setEditTo] = useState('')
   const [editDur, setEditDur] = useState('')
   const [editDays, setEditDays] = useState<string[]>([])
+  const [editWeight, setEditWeight] = useState(100)
 
   const showToast = (msg: string, type = 'success') => {
     setToast({ msg, type })
@@ -77,6 +79,7 @@ export default function SchedulePage() {
       end_time: to,
       days_of_week: selDays.map(d => DAY_TO_CODE[d]),
       duration_sec: Number(dur) || 30,
+      weight,
     })
     setSaving(false)
 
@@ -94,6 +97,7 @@ export default function SchedulePage() {
     setEditTo(s.end_time?.substring(0, 5) || '22:00')
     setEditDur(String(s.duration_sec || 30))
     setEditDays((s.days_of_week || []).map((c: string) => CODE_TO_DAY[c] || c))
+    setEditWeight(s.weight ?? 100)
     setEditModal(true)
   }
 
@@ -106,6 +110,7 @@ export default function SchedulePage() {
       end_time: editTo,
       duration_sec: Number(editDur) || 30,
       days_of_week: editDays.map(d => DAY_TO_CODE[d]),
+      weight: editWeight,
     })
     setSaving(false)
     setEditModal(false)
@@ -152,6 +157,17 @@ export default function SchedulePage() {
             <div className="mb-3">
               <label className="label">مدة كل إعلان (ثانية)</label>
               <input className="input w-full" type="number" min="5" max="300" value={editDur} onChange={e => setEditDur(e.target.value)} />
+            </div>
+
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <label className="label">نسبة الظهور</label>
+                <span className="text-sm font-bold text-primary">{editWeight}%</span>
+              </div>
+              <input type="range" min="10" max="100" step="5" value={editWeight}
+                onChange={e => setEditWeight(Number(e.target.value))}
+                className="w-full accent-primary" />
+              <p className="text-xs text-gray-400 mt-1">لو في حملتان على نفس الشاشة — هذه النسبة تحدد كم مرة تظهر مقارنة بالأخرى</p>
             </div>
 
             <div className="mb-5">
@@ -218,9 +234,20 @@ export default function SchedulePage() {
           </div>
         </div>
 
-        <div className="mb-3">
-          <label className="label">مدة كل إعلان (ثانية)</label>
-          <input className="input w-32" type="number" min="5" max="300" value={dur} onChange={e => setDur(e.target.value)} />
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="label">مدة كل إعلان (ثانية)</label>
+            <input className="input w-full" type="number" min="5" max="300" value={dur} onChange={e => setDur(e.target.value)} />
+          </div>
+          <div>
+            <div className="flex justify-between">
+              <label className="label">نسبة الظهور</label>
+              <span className="text-xs font-bold text-primary mt-1">{weight}%</span>
+            </div>
+            <input type="range" min="10" max="100" step="5" value={weight}
+              onChange={e => setWeight(Number(e.target.value))}
+              className="w-full mt-2 accent-primary" />
+          </div>
         </div>
 
         <div className="mb-4">
@@ -257,6 +284,7 @@ export default function SchedulePage() {
               <th className="th">الوقت</th>
               <th className="th">الأيام</th>
               <th className="th">المدة</th>
+              <th className="th">النسبة</th>
               <th className="th">الحالة</th>
               <th className="th"></th>
             </tr>
@@ -289,6 +317,7 @@ export default function SchedulePage() {
                   <td className="td text-gray-600 font-mono text-xs">{startTime} – {endTime}</td>
                   <td className="td text-gray-600 text-xs max-w-xs">{arabicDays}</td>
                   <td className="td text-gray-600">{s.duration_sec} ث</td>
+                  <td className="td text-gray-600">{s.weight ?? 100}%</td>
                   <td className="td">
                     <span className={`badge ${cls}`}>{label}</span>
                   </td>

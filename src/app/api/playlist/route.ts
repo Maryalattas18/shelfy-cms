@@ -47,8 +47,9 @@ export async function GET(req: NextRequest) {
     .lte('start_time', currentTime)
     .gte('end_time', currentTime)
 
-  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2 }
-  const playlistBuckets: Record<string, any[]> = { urgent: [], high: [], normal: [] }
+  // جمع الحملات النشطة مع إعلاناتها وأوزانها
+  type CampEntry = { items: any[]; weight: number; priority: string }
+  const campEntries: CampEntry[] = []
 
   if (schedules && schedules.length > 0) {
     for (const schedule of schedules) {
@@ -57,23 +58,51 @@ export async function GET(req: NextRequest) {
       if (!schedule.days_of_week?.includes(today)) continue
       const mediaItems = [...(campaign.campaign_media || [])]
       mediaItems.sort((a: any, b: any) => a.order_num - b.order_num)
-      const bucket = campaign.priority === 'urgent' ? 'urgent' : campaign.priority === 'high' ? 'high' : 'normal'
-      for (const item of mediaItems) {
-        if (item.media) {
-          playlistBuckets[bucket].push({
-            ...item.media,
-            duration_sec: schedule.duration_sec || item.media.duration_sec || 15,
-            fit_mode: item.fit_mode || screen.fit_mode || 'cover',
-            object_position: item.object_position || 'center center',
-            transform: item.transform || null,
-          })
-        }
+      const items = mediaItems
+        .filter((item: any) => item.media)
+        .map((item: any) => ({
+          ...item.media,
+          duration_sec: schedule.duration_sec || item.media.duration_sec || 15,
+          fit_mode: item.fit_mode || screen.fit_mode || 'cover',
+          object_position: item.object_position || 'center center',
+          transform: item.transform || null,
+        }))
+      if (items.length > 0) {
+        campEntries.push({ items, weight: schedule.weight ?? 100, priority: campaign.priority || 'normal' })
       }
     }
   }
 
-  // urgent أول، ثم high، ثم normal
-  const playlist = [...playlistBuckets.urgent, ...playlistBuckets.high, ...playlistBuckets.normal]
+  // ترتيب حسب الأولوية
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2 }
+  campEntries.sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2))
+
+  // توزيع النسب — خوارزمية Bresenham للتوزيع المتوازن
+  let playlist: any[] = []
+  if (campEntries.length === 1) {
+    playlist = campEntries[0].items
+  } else if (campEntries.length > 1) {
+    const totalWeight = campEntries.reduce((s, e) => s + e.weight, 0)
+    const POOL = 20 // عدد المقاعد الكلي في الدورة
+    // احسب عدد المقاعد لكل حملة
+    const slots = campEntries.map(e => ({
+      ...e,
+      slots: Math.max(1, Math.round((e.weight / totalWeight) * POOL)),
+    }))
+    // أنشئ قائمة ممتدة لكل حملة (كرّر الإعلانات لتملأ المقاعد)
+    const expanded = slots.map(e => {
+      const result: any[] = []
+      for (let i = 0; i < e.slots; i++) result.push(e.items[i % e.items.length])
+      return result
+    })
+    // دمج بالتناوب (interleave)
+    const maxLen = Math.max(...expanded.map(e => e.length))
+    for (let i = 0; i < maxLen; i++) {
+      for (const list of expanded) {
+        if (i < list.length) playlist.push(list[i])
+      }
+    }
+  }
 
   await supabase
     .from('screens')
