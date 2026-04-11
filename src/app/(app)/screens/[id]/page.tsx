@@ -23,6 +23,11 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
     })
   }, [params.id])
 
+  const updateSetting = async (key: string, value: string) => {
+    setScreen((s: any) => ({ ...s, [key]: value }))
+    await updateScreen(screen.id, { [key]: value })
+  }
+
   const disconnect = async () => {
     if (!confirm(`فصل الشاشة "${screen.name}"؟\nسيتوقف عرض الإعلانات عليها.`)) return
     setWorking(true)
@@ -80,6 +85,54 @@ export default function ScreenDetailPage({ params }: { params: { id: string } })
             className="btn btn-danger">
             {working ? '...' : 'حذف الشاشة'}
           </button>
+        </div>
+      </div>
+
+      {/* ─── Display Settings ─── */}
+      <div className="card p-4 mb-5">
+        <p className="section-title mb-4">إعدادات العرض</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* Orientation */}
+          <div>
+            <p className="label mb-2">اتجاه الشاشة</p>
+            <div className="flex gap-2">
+              {[
+                { val: 'landscape', ar: 'أفقي', icon: '▬' },
+                { val: 'portrait',  ar: 'عمودي', icon: '▮' },
+              ].map(o => (
+                <button key={o.val} onClick={() => updateSetting('orientation', o.val)}
+                  className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all
+                    ${screen.orientation === o.val
+                      ? 'bg-primary-light text-primary border-primary'
+                      : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                  <span className="block text-lg mb-0.5">{o.icon}</span>
+                  {o.ar}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Fit Mode */}
+          <div>
+            <p className="label mb-2">وضع ملاءمة الإعلان</p>
+            <div className="flex gap-2">
+              {[
+                { val: 'cover',   ar: 'تعبئة', desc: 'يملأ الشاشة' },
+                { val: 'contain', ar: 'احتواء', desc: 'كامل مع شريط' },
+                { val: 'fill',    ar: 'مد',    desc: 'يمد الصورة' },
+              ].map(f => (
+                <button key={f.val} onClick={() => updateSetting('fit_mode', f.val)}
+                  className={`flex-1 py-2 px-1 rounded-lg border text-xs font-medium transition-all
+                    ${(screen.fit_mode || 'cover') === f.val
+                      ? 'bg-primary-light text-primary border-primary'
+                      : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                  <span className="block font-semibold text-sm">{f.ar}</span>
+                  <span className="block opacity-60 mt-0.5">{f.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

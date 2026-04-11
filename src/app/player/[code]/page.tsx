@@ -27,6 +27,8 @@ export default function PlayerPage() {
   const [clock, setClock] = useState('')
   const [fullscreen, setFullscreen] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
+  const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape')
+  const [fitMode, setFitMode] = useState<'cover' | 'contain' | 'fill'>('cover')
 
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mediaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -78,6 +80,8 @@ export default function PlayerPage() {
         return
       }
       setScreenId(data.screenId)
+      setOrientation(data.orientation || 'landscape')
+      setFitMode(data.fitMode || 'cover')
       setRetryCount(0)
       const items: MediaItem[] = data.playlist || []
       setPlaylist(prev => {
@@ -244,29 +248,47 @@ export default function PlayerPage() {
 
       {/* Current Media */}
       <div style={{ ...S.mediaWrap, opacity: transitioning ? 0 : 1, transition: 'opacity 0.4s ease' }}>
-        {current?.file_type === 'image' ? (
-          <img
-            key={`img-${currentIndex}`}
-            src={current.file_url}
-            alt=""
-            style={S.media}
-          />
-        ) : (
-          <video
-            key={`vid-${currentIndex}`}
-            ref={videoRef}
-            src={current?.file_url}
-            autoPlay
-            muted
-            playsInline
-            style={S.media}
-            onEnded={() => advance(currentIndex, playlist, screenId)}
-            onError={() => {
-              if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-              setTimeout(() => advance(currentIndex, playlist, screenId), 500)
-            }}
-          />
-        )}
+        <div style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          ...(orientation === 'portrait' ? {
+            transform: 'rotate(90deg)',
+            width: '100vh',
+            height: '100vw',
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            marginTop: '-50vw',
+            marginLeft: '-50vh',
+          } : {}),
+        }}>
+          {current?.file_type === 'image' ? (
+            <img
+              key={`img-${currentIndex}`}
+              src={current.file_url}
+              alt=""
+              style={{ ...S.media, objectFit: fitMode }}
+            />
+          ) : (
+            <video
+              key={`vid-${currentIndex}`}
+              ref={videoRef}
+              src={current?.file_url}
+              autoPlay
+              muted
+              playsInline
+              style={{ ...S.media, objectFit: fitMode }}
+              onEnded={() => advance(currentIndex, playlist, screenId)}
+              onError={() => {
+                if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
+                setTimeout(() => advance(currentIndex, playlist, screenId), 500)
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* Bottom Bar */}

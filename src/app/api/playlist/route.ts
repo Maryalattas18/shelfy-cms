@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   const { data: screen, error: screenError } = await supabase
     .from('screens')
-    .select('id, name, status')
+    .select('id, name, status, orientation, fit_mode')
     .eq('pair_code', code.toUpperCase())
     .single()
 
@@ -75,6 +75,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     screenId: screen.id,
     screenName: screen.name,
+    orientation: screen.orientation || 'landscape',
+    fitMode: screen.fit_mode || 'cover',
     playlist,
     _debug: {
       currentTime,
