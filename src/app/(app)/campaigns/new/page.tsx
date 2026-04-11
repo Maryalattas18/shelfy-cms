@@ -364,8 +364,12 @@ function NewCampaignForm() {
             <button className="btn btn-secondary" onClick={() => setStep(2)}>→ السابق</button>
             <div className="flex gap-2">
               <button className="btn btn-secondary" onClick={() => save('draft')} disabled={saving}>حفظ كمسودة</button>
-              <button className="btn btn-primary" onClick={() => save('active')} disabled={saving}>
-                {saving ? 'جاري الحفظ...' : 'نشر الحملة'}
+              <button className="btn btn-primary" onClick={() => {
+                const today = new Date().toISOString().split('T')[0]
+                const status = form.start && form.start > today ? 'scheduled' : 'active'
+                save(status)
+              }} disabled={saving}>
+                {saving ? 'جاري الحفظ...' : form.start && form.start > new Date().toISOString().split('T')[0] ? 'جدولة الحملة' : 'نشر الحملة'}
               </button>
             </div>
           </div>
