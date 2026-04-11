@@ -108,17 +108,14 @@ export async function sendCampaignEndEmail({
   to: string; clientName: string; campaignName: string
   startDate: string; endDate: string; plays: number; hours: number
   screensCount: number; mediaCount: number; portalUrl: string
-  pdfBuffer: Buffer; price?: number
+  pdfBuffer?: Buffer; price?: number
 }) {
   await resend.emails.send({
     from: FROM,
     to,
     replyTo: REPLY_TO,
     subject: `✅ تقرير حملة "${campaignName}" · Campaign Report`,
-    attachments: [{
-      filename: `Shelfy-Report-${campaignName.replace(/\s+/g, '-')}.pdf`,
-      content: pdfBuffer,
-    }],
+    ...(pdfBuffer ? { attachments: [{ filename: `Shelfy-Report-${campaignName.replace(/\s+/g, '-')}.pdf`, content: pdfBuffer }] } : {}),
     html: `
 <div style="background:#f7f8fa;padding:32px 16px;font-family:Arial,sans-serif">
 <div style="max-width:580px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;border:1px solid #ebebea">

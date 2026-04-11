@@ -50,18 +50,23 @@ export async function GET() {
           const hours = parseFloat((totalSec / 3600).toFixed(1))
           const portalUrl = client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login'
 
-          // توليد PDF
-          const pdfBuffer = await generateCampaignPdf({
-            clientName: client.company_name,
-            campaignName: c.name,
-            startDate: c.start_date,
-            endDate: c.end_date,
-            plays, hours,
-            screensCount: screens.length,
-            screens,
-            mediaCount: mediaIds.length,
-            price: c.price,
-          })
+          // توليد PDF (اختياري - لا يوقف الإيميل لو فشل)
+          let pdfBuffer: Buffer | undefined
+          try {
+            pdfBuffer = await generateCampaignPdf({
+              clientName: client.company_name,
+              campaignName: c.name,
+              startDate: c.start_date,
+              endDate: c.end_date,
+              plays, hours,
+              screensCount: screens.length,
+              screens,
+              mediaCount: mediaIds.length,
+              price: c.price,
+            })
+          } catch (pdfErr) {
+            console.error('PDF generation failed (email will still send):', pdfErr)
+          }
 
           await sendCampaignEndEmail({
             to: client.email,
