@@ -168,9 +168,45 @@ export async function GET() {
     }
   }
 
+  // ─── 4. شاشات منقطعة أكثر من 15 دقيقة ──────
+  const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+
+  const { data: offlineScreens } = await supabase
+    .from('screens')
+    .select('id, name, location_name, last_seen')
+    .eq('status', 'online')
+    .lt('last_seen', cutoff)
+
+  let offlineCount = 0
+  if (offlineScreens && offlineScreens.length > 0) {
+    for (const sc of offlineScreens) {
+      // تحديث حالة الشاشة لـ offline
+      await supabase.from('screens').update({ status: 'offline' }).eq('id', sc.id)
+
+      // تأكد ما في إشعار مرسل لهذه الشاشة خلال آخر ساعة
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const { data: existing } = await supabase
+        .from('notifications').select('id')
+        .eq('type', 'screen_offline')
+        .ilike('title', `%${sc.name}%`)
+        .gte('created_at', hourAgo)
+        .single()
+
+      if (!existing) {
+        await supabase.from('notifications').insert({
+          type: 'screen_offline',
+          title: `📺 شاشة "${sc.name}" انقطعت`,
+          body: `${sc.location_name ? sc.location_name + ' · ' : ''}آخر اتصال: ${new Date(sc.last_seen).toLocaleTimeString('ar-SA')}`,
+        })
+        offlineCount++
+      }
+    }
+  }
+
   return NextResponse.json({
     ended: ended?.length ?? 0,
     starting: starting?.length ?? 0,
     expiring: expiring?.length ?? 0,
+    offline: offlineCount,
   })
 }

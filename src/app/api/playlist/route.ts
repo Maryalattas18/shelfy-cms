@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     .select(`
       *,
       campaign:campaigns(
-        id, name, status,
+        id, name, status, priority,
         campaign_media(
           id, order_num, fit_mode, object_position, transform,
           media(id, file_name, file_url, file_type, duration_sec)
@@ -47,18 +47,20 @@ export async function GET(req: NextRequest) {
     .lte('start_time', currentTime)
     .gte('end_time', currentTime)
 
-  const playlist: any[] = []
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2 }
+  const playlistBuckets: Record<string, any[]> = { urgent: [], high: [], normal: [] }
 
   if (schedules && schedules.length > 0) {
     for (const schedule of schedules) {
       const campaign = schedule.campaign
       if (!campaign || campaign.status !== 'active') continue
       if (!schedule.days_of_week?.includes(today)) continue
-      const mediaItems = campaign.campaign_media || []
+      const mediaItems = [...(campaign.campaign_media || [])]
       mediaItems.sort((a: any, b: any) => a.order_num - b.order_num)
+      const bucket = campaign.priority === 'urgent' ? 'urgent' : campaign.priority === 'high' ? 'high' : 'normal'
       for (const item of mediaItems) {
         if (item.media) {
-          playlist.push({
+          playlistBuckets[bucket].push({
             ...item.media,
             duration_sec: schedule.duration_sec || item.media.duration_sec || 15,
             fit_mode: item.fit_mode || screen.fit_mode || 'cover',
@@ -69,6 +71,9 @@ export async function GET(req: NextRequest) {
       }
     }
   }
+
+  // urgent أول، ثم high، ثم normal
+  const playlist = [...playlistBuckets.urgent, ...playlistBuckets.high, ...playlistBuckets.normal]
 
   await supabase
     .from('screens')
