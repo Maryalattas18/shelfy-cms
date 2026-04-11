@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendCampaignStartEmail, sendCampaignEndEmail } from '@/lib/email'
 
 function getSupabase() {
   return createClient(
@@ -16,7 +17,7 @@ export async function GET() {
   // ─── 1. حملات انتهت اليوم ────────────────────
   const { data: ended } = await supabase
     .from('campaigns')
-    .select('id, name, client_id, clients(company_name, phone)')
+    .select('id, name, client_id, clients(company_name, phone, email, portal_token)')
     .eq('status', 'active')
     .lte('end_date', today)
 
@@ -28,6 +29,18 @@ export async function GET() {
       const waMsg = client?.phone
         ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nنود إعلامكم بأن حملتكم الإعلانية "${c.name}" قد اكتملت بنجاح.\n\nيسعدنا التواصل معكم لمناقشة تجديد الحملة أو إطلاق حملة جديدة.\n\nفريق Shelfy Screens`)
         : null
+
+      // إرسال إيميل تلقائي
+      if (client?.email) {
+        try {
+          await sendCampaignEndEmail({
+            to: client.email,
+            clientName: client.company_name,
+            campaignName: c.name,
+            portalUrl: client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login',
+          })
+        } catch (e) { console.error('email error', e) }
+      }
 
       await supabase.from('notifications').insert({
         type: 'campaign_ended',
@@ -45,7 +58,7 @@ export async function GET() {
 
   const { data: starting } = await supabase
     .from('campaigns')
-    .select('id, name, client_id, clients(company_name, phone)')
+    .select('id, name, client_id, clients(company_name, phone, email, portal_token)')
     .eq('status', 'scheduled')
     .eq('start_date', tomorrowStr)
 
@@ -57,6 +70,18 @@ export async function GET() {
       const waMsg = client?.phone
         ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nيسعدنا إعلامكم بأن حملتكم الإعلانية "${c.name}" ستبدأ غداً على شاشات Shelfy.\n\nيمكنكم متابعة أداء الحملة من بوابتكم الخاصة.\n\nفريق Shelfy Screens`)
         : null
+
+      // إرسال إيميل تلقائي
+      if (client?.email) {
+        try {
+          await sendCampaignStartEmail({
+            to: client.email,
+            clientName: client.company_name,
+            campaignName: c.name,
+            portalUrl: client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login',
+          })
+        } catch (e) { console.error('email error', e) }
+      }
 
       await supabase.from('notifications').insert({
         type: 'campaign_starting',
