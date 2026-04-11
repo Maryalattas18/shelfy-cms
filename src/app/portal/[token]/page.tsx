@@ -121,6 +121,7 @@ function PortalContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [aiSummary, setAiSummary] = useState('')
+  const [expandedCamp, setExpandedCamp] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/portal/${token}`)
@@ -265,9 +266,14 @@ function PortalContent() {
                 const [bg, fg] = STATUS_COLORS[c.status] || ['#f1efe8', '#5f5e5a']
                 const label = statusLabel(c.status)
                 const isActive = c.status === 'active'
+                const isExpanded = expandedCamp === c.id
                 return (
-                  <div key={c.id}>
-                    <div style={{ border: `1px solid ${isActive ? '#b8e0a0' : '#ebebea'}`, background: isActive ? '#f8fdf5' : '#fafaf8', borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
+                  <div key={c.id} style={{ border: `1px solid ${isActive ? '#b8e0a0' : '#ebebea'}`, borderRadius: 12, overflow: 'hidden' }}>
+                    {/* ─ Header (قابل للضغط) ─ */}
+                    <div
+                      onClick={() => setExpandedCamp(isExpanded ? null : c.id)}
+                      style={{ background: isActive ? '#f8fdf5' : '#fafaf8', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: 8 }}
+                    >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{c.name}</span>
@@ -278,14 +284,63 @@ function PortalContent() {
                           {c.price > 0 && <span style={{ marginInlineStart: 12, color: '#888' }}>· {Number(c.price).toLocaleString(locale)} {lang === 'ar' ? 'ر.س' : 'SAR'}</span>}
                         </div>
                       </div>
-                      {c.plays > 0 && (
-                        <div style={{ textAlign: 'center', marginInlineStart: 16 }}>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: '#378ADD' }}>{c.plays.toLocaleString(locale)}</div>
-                          <div style={{ fontSize: 10, color: '#bbb' }}>{t('portal_plays_unit')}</div>
-                        </div>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {c.plays > 0 && (
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 18, fontWeight: 800, color: '#378ADD' }}>{c.plays.toLocaleString(locale)}</div>
+                            <div style={{ fontSize: 10, color: '#bbb' }}>{t('portal_plays_unit')}</div>
+                          </div>
+                        )}
+                        <span style={{ fontSize: 12, color: '#bbb', transition: 'transform 0.2s', display: 'inline-block', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                      </div>
                     </div>
-                    {c.status === 'ended' && <StarRating campaignId={c.id} />}
+
+                    {/* ─ التفاصيل ─ */}
+                    {isExpanded && (
+                      <div style={{ borderTop: `1px solid ${isActive ? '#c6e8b4' : '#f0f0ee'}`, background: 'white', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                        {/* الشاشات */}
+                        {c.screens && c.screens.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginBottom: 8, letterSpacing: '0.05em' }}>{lang === 'ar' ? 'الشاشات المرتبطة' : 'LINKED SCREENS'}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {c.screens.map((s: any) => (
+                                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#fafaf8', borderRadius: 8, border: '1px solid #ebebea' }}>
+                                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.status === 'online' ? '#22c55e' : '#e5e7eb', flexShrink: 0 }} />
+                                  <div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{s.name}</div>
+                                    {s.location_name && <div style={{ fontSize: 11, color: '#aaa' }}>{s.location_name}</div>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* المحتوى */}
+                        {c.media && c.media.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginBottom: 8, letterSpacing: '0.05em' }}>{lang === 'ar' ? 'المحتوى' : 'CONTENT'} ({c.media.length})</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 8 }}>
+                              {c.media.map((m: any) => (
+                                <div key={m.id} style={{ border: '1px solid #ebebea', borderRadius: 8, overflow: 'hidden', background: '#fafaf8' }}>
+                                  <div style={{ height: 60, background: '#f0f0ee', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                    {m.file_type === 'image' && m.file_url
+                                      ? <img src={m.file_url} alt={m.file_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                      : <span style={{ fontSize: 20 }}>🎬</span>}
+                                  </div>
+                                  <div style={{ padding: '6px 8px' }}>
+                                    <p style={{ fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.file_name}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {c.status === 'ended' && <div style={{ padding: '0 14px 14px', background: 'white' }}><StarRating campaignId={c.id} /></div>}
                   </div>
                 )
               })}

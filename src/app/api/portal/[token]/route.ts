@@ -68,7 +68,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     allCampaigns.map(async (c: any) => {
       const { data: cm } = await supabase
         .from('campaign_media')
-        .select('media_id')
+        .select('media_id, media(id, file_name, file_url, file_type, duration_sec)')
         .eq('campaign_id', c.id)
 
       const mediaIds = (cm || []).map((x: any) => x.media_id)
@@ -82,7 +82,16 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
         plays = count || 0
       }
 
-      return { ...c, plays }
+      // جلب الشاشات المرتبطة بالحملة
+      const { data: schedules } = await supabase
+        .from('schedules')
+        .select('screen:screens(id, name, location_name, status)')
+        .eq('campaign_id', c.id)
+
+      const screens = (schedules || []).map((s: any) => s.screen).filter(Boolean)
+      const campaignMedia = (cm || []).map((x: any) => x.media).filter(Boolean)
+
+      return { ...c, plays, screens, media: campaignMedia }
     })
   )
 
