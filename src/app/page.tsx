@@ -114,7 +114,7 @@ function Navbar() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         fontFamily: 'Cairo, sans-serif', direction: dir,
       }}>
-        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 52, objectFit: 'contain', mixBlendMode: 'screen' }} />
+        <img src="/shelfy-logo.png" alt="Shelfy" style={{ height: 62, objectFit: 'contain', mixBlendMode: 'screen' }} />
 
         {isMobile ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
