@@ -71,5 +71,24 @@ export async function GET(req: NextRequest) {
     .update({ status: 'online', last_seen: new Date().toISOString() })
     .eq('id', screen.id)
 
-  return NextResponse.json({ screenId: screen.id, screenName: screen.name, playlist })
+  return NextResponse.json({
+    screenId: screen.id,
+    screenName: screen.name,
+    playlist,
+    _debug: {
+      currentTime,
+      today,
+      schedulesFound: schedules?.length ?? 0,
+      schedules: (schedules || []).map((s: any) => ({
+        id: s.id,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        days_of_week: s.days_of_week,
+        campaign_status: s.campaign?.status,
+        media_count: s.campaign?.campaign_media?.length ?? 0,
+        dayMatch: s.days_of_week?.includes(today),
+        timeMatch: s.start_time <= currentTime && s.end_time >= currentTime,
+      }))
+    }
+  })
 }
