@@ -25,10 +25,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'كود الشاشة غير صحيح' }, { status: 404 })
   }
 
-  const now = new Date()
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  // توقيت السعودية = UTC+3
+  const now = new Date(Date.now() + 3 * 60 * 60 * 1000)
+  const currentTime = `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}`
   const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-  const today = dayNames[now.getDay()]
+  const today = dayNames[now.getUTCDay()]
 
   const { data: schedules } = await supabase
     .from('schedules')
