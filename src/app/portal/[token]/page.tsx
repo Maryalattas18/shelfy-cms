@@ -101,6 +101,49 @@ function StarRating({ campaignId }: { campaignId: string }) {
   )
 }
 
+/* ─── Daily Chart ─────────────────────────────── */
+function DailyChart({ data, lang }: { data: { date: string; plays: number }[]; lang: string }) {
+  const max = Math.max(...data.map(d => d.plays), 1)
+  const days = ['أحد','إث','ثل','أرب','خم','جم','سب']
+  const daysEn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  const W = 280, H = 80, pad = 20
+
+  return (
+    <div style={{ background: 'white', border: '1px solid #ebebea', borderRadius: 16, padding: '16px 18px', marginBottom: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 12 }}>
+        {lang === 'ar' ? 'العروض — آخر 7 أيام' : 'Plays — Last 7 Days'}
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H + pad}`} style={{ overflow: 'visible' }}>
+        {data.map((d, i) => {
+          const barW = (W / data.length) * 0.6
+          const x = (i / data.length) * W + (W / data.length) * 0.2
+          const barH = max > 0 ? (d.plays / max) * H : 0
+          const y = H - barH
+          const isToday = i === data.length - 1
+          const dayIndex = new Date(d.date).getDay()
+          const dayLabel = lang === 'ar' ? days[dayIndex] : daysEn[dayIndex]
+          return (
+            <g key={d.date}>
+              <rect x={x} y={y} width={barW} height={Math.max(barH, 2)}
+                rx={4}
+                fill={isToday ? '#378ADD' : '#e6f1fb'}
+              />
+              {d.plays > 0 && (
+                <text x={x + barW / 2} y={y - 3} textAnchor="middle" fontSize={9} fill="#378ADD" fontWeight={600}>
+                  {d.plays}
+                </text>
+              )}
+              <text x={x + barW / 2} y={H + pad - 2} textAnchor="middle" fontSize={9} fill={isToday ? '#378ADD' : '#bbb'} fontWeight={isToday ? 700 : 400}>
+                {dayLabel}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
 function useIsMobile() {
   const [v, setV] = useState(false)
   useEffect(() => {
@@ -228,6 +271,11 @@ function PortalContent() {
           <StatCard icon="📢" label={t('portal_campaigns')} value={stats.campaignCount} color="#27a376" />
           <StatCard icon="🎬" label={t('portal_media')}     value={stats.mediaCount}    color="#ef9f27" />
         </div>
+
+        {/* ─── Daily Chart ─── */}
+        {stats.dailyPlays && stats.dailyPlays.some((d: any) => d.plays > 0) && (
+          <DailyChart data={stats.dailyPlays} lang={lang} />
+        )}
 
         {/* ─── AI Summary ─── */}
         {aiSummary && (

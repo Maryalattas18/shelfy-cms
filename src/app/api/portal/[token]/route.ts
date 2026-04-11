@@ -63,6 +63,40 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     }
   }
 
+  // إحصائيات آخر 7 أيام
+  const daily: Record<string, number> = {}
+  const today7 = new Date(Date.now() + 3 * 60 * 60 * 1000) // UTC+3
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today7)
+    d.setDate(d.getDate() - i)
+    daily[d.toISOString().split('T')[0]] = 0
+  }
+
+  if (campaignIds.length > 0) {
+    const { data: cm7 } = await supabase
+      .from('campaign_media')
+      .select('media_id')
+      .in('campaign_id', campaignIds)
+
+    const mediaIds7 = (cm7 || []).map((x: any) => x.media_id)
+    const since7 = Object.keys(daily)[0] + 'T00:00:00Z'
+
+    if (mediaIds7.length > 0) {
+      const { data: recentLogs } = await supabase
+        .from('play_logs')
+        .select('played_at')
+        .in('media_id', mediaIds7)
+        .gte('played_at', since7)
+
+      for (const log of recentLogs || []) {
+        const day = new Date(new Date(log.played_at).getTime() + 3 * 60 * 60 * 1000).toISOString().split('T')[0]
+        if (day in daily) daily[day]++
+      }
+    }
+  }
+
+  const dailyPlays = Object.entries(daily).map(([date, plays]) => ({ date, plays }))
+
   // إحصائيات لكل حملة
   const campaignsWithStats = await Promise.all(
     allCampaigns.map(async (c: any) => {
@@ -102,6 +136,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
       totalHours: parseFloat((totalSec / 3600).toFixed(1)),
       campaignCount: allCampaigns.length,
       mediaCount: (media || []).length,
+      dailyPlays,
     },
     campaigns: campaignsWithStats,
     media: media || [],
