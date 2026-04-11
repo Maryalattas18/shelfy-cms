@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getCampaigns, getCampaignMedia, getCampaignSchedules, getMedia, updateCampaign, deleteCampaign_, createCampaignMedia, updateCampaignMedia, uploadMedia } from '@/lib/supabase'
 
 const STATUS_MAP: Record<string, [string, string]> = {
@@ -36,6 +36,13 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [toast, setToast] = useState('')
+
+  // ─── Transform Editor ───
+  const [transformModal, setTransformModal] = useState<any | null>(null)
+  const [tr, setTr] = useState({ x: 0, y: 0, scale: 1, rotate: 0 })
+  const [trSaving, setTrSaving] = useState(false)
+  const dragRef = useRef<{ startX: number; startY: number; initX: number; initY: number } | null>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   // ─── Add Media Modal ───
   const [expandedMedia, setExpandedMedia] = useState<string | null>(null)
@@ -85,6 +92,40 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     setMedia(prev => prev.map(m => m.id === id ? { ...m, [key]: value } : m))
     await updateCampaignMedia(id, { [key]: value })
   }
+
+  const openTransform = (m: any) => {
+    const saved = m.transform || { x: 0, y: 0, scale: 1, rotate: 0 }
+    setTr({ x: saved.x ?? 0, y: saved.y ?? 0, scale: saved.scale ?? 1, rotate: saved.rotate ?? 0 })
+    setTransformModal(m)
+  }
+
+  const saveTransform = async () => {
+    if (!transformModal) return
+    setTrSaving(true)
+    setMedia(prev => prev.map(m => m.id === transformModal.id ? { ...m, transform: tr } : m))
+    await updateCampaignMedia(transformModal.id, { transform: tr } as any)
+    setTrSaving(false)
+    setTransformModal(null)
+    showToast('تم حفظ التعديلات')
+  }
+
+  const onDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    dragRef.current = { startX: clientX, startY: clientY, initX: tr.x, initY: tr.y }
+  }
+
+  const onDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!dragRef.current || !previewRef.current) return
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    const { width, height } = previewRef.current.getBoundingClientRect()
+    const dx = ((clientX - dragRef.current.startX) / width) * 100
+    const dy = ((clientY - dragRef.current.startY) / height) * 100
+    setTr(t => ({ ...t, x: Math.max(-50, Math.min(50, dragRef.current!.initX + dx)), y: Math.max(-50, Math.min(50, dragRef.current!.initY + dy)) }))
+  }
+
+  const onDragEnd = () => { dragRef.current = null }
 
   const openAddMedia = async () => {
     const all = await getMedia() as any[]
@@ -290,37 +331,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   <div className="p-2">
                     <p className="text-xs text-gray-700 truncate mb-1">{m.media?.file_name}</p>
 
-                    {/* Controls */}
-                    {isExpanded && (
-                      <div className="mt-2 space-y-2 border-t border-gray-50 pt-2">
-                        {/* Fit Mode */}
-                        <div className="flex gap-1">
-                          {[['cover','تعبئة'],['contain','احتواء'],['fill','مد']].map(([v, ar]) => (
-                            <button key={v} onClick={() => updateMediaSetting(m.id, 'fit_mode', v)}
-                              className={`flex-1 text-xs py-1 rounded border transition-all
-                                ${fitMode === v ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
-                              {ar}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Position Grid — يظهر فقط عند cover */}
-                        {fitMode === 'cover' && (
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">موضع الصورة</p>
-                            <div className="grid grid-cols-3 gap-0.5" style={{ width: 66 }}>
-                              {positions.map((row, ri) => row.map((pos, ci) => (
-                                <button key={pos} onClick={() => updateMediaSetting(m.id, 'object_position', pos)}
-                                  style={{ width: 20, height: 20, borderRadius: 3, border: '1.5px solid', transition: 'all 0.1s',
-                                    borderColor: objPos === pos ? '#378ADD' : '#e5e7eb',
-                                    background: objPos === pos ? '#e6f1fb' : '#f9f9f7' }}
-                                />
-                              )))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {/* Edit Button */}
+                    <button onClick={() => openTransform(m)}
+                      className="w-full mt-1 text-xs py-1 rounded border border-gray-200 text-gray-500 hover:border-primary hover:text-primary transition-all">
+                      تعديل المظهر ✏️
+                    </button>
                   </div>
                 </div>
               )
@@ -359,6 +374,100 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Transform Editor Modal ─── */}
+      {transformModal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setTransformModal(null) }}>
+          <div className="modal" style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <span className="modal-title">تعديل مظهر الإعلان</span>
+              <button onClick={() => setTransformModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 20 }}>×</button>
+            </div>
+
+            {/* Preview */}
+            <div
+              ref={previewRef}
+              onMouseDown={onDragStart}
+              onMouseMove={onDragMove}
+              onMouseUp={onDragEnd}
+              onMouseLeave={onDragEnd}
+              onTouchStart={onDragStart}
+              onTouchMove={onDragMove}
+              onTouchEnd={onDragEnd}
+              style={{
+                width: '100%', height: 220, background: '#111', borderRadius: 12,
+                overflow: 'hidden', position: 'relative', cursor: 'grab', marginBottom: 16,
+                userSelect: 'none',
+              }}>
+              {transformModal.media?.file_type === 'image' ? (
+                <img src={transformModal.media.file_url} alt="" style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  transform: `translate(calc(-50% + ${tr.x}%), calc(-50% + ${tr.y}%)) scale(${tr.scale}) rotate(${tr.rotate}deg)`,
+                  transformOrigin: 'center center',
+                  pointerEvents: 'none',
+                }} />
+              ) : (
+                <video src={transformModal.media?.file_url} muted style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  transform: `translate(calc(-50% + ${tr.x}%), calc(-50% + ${tr.y}%)) scale(${tr.scale}) rotate(${tr.rotate}deg)`,
+                  transformOrigin: 'center center',
+                  pointerEvents: 'none',
+                }} />
+              )}
+              <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 10, padding: '2px 8px', borderRadius: 4 }}>
+                اسحب لتحريك الصورة
+              </div>
+            </div>
+
+            {/* Zoom */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 12, color: '#555' }}>تكبير / قص الأطراف</span>
+                <span style={{ fontSize: 12, color: '#378ADD', fontWeight: 600 }}>{tr.scale.toFixed(1)}x</span>
+              </div>
+              <input type="range" min="1" max="4" step="0.05" value={tr.scale}
+                onChange={e => setTr(t => ({ ...t, scale: parseFloat(e.target.value) }))}
+                style={{ width: '100%', accentColor: '#378ADD' }} />
+            </div>
+
+            {/* Rotation */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 12, color: '#555' }}>تدوير</span>
+                <span style={{ fontSize: 12, color: '#378ADD', fontWeight: 600 }}>{tr.rotate}°</span>
+              </div>
+              <input type="range" min="-180" max="180" step="1" value={tr.rotate}
+                onChange={e => setTr(t => ({ ...t, rotate: parseInt(e.target.value) }))}
+                style={{ width: '100%', accentColor: '#378ADD' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                {[-90, -45, 0, 45, 90].map(deg => (
+                  <button key={deg} onClick={() => setTr(t => ({ ...t, rotate: deg }))}
+                    style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid #e5e7eb',
+                      background: tr.rotate === deg ? '#e6f1fb' : '#f9f9f7',
+                      color: tr.rotate === deg ? '#378ADD' : '#888', cursor: 'pointer' }}>
+                    {deg}°
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setTr({ x: 0, y: 0, scale: 1, rotate: 0 })}
+                style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9f9f7', color: '#888', fontSize: 13, cursor: 'pointer' }}>
+                إعادة تعيين
+              </button>
+              <button onClick={() => setTransformModal(null)}
+                className="btn btn-secondary flex-1">إلغاء</button>
+              <button onClick={saveTransform} disabled={trSaving}
+                className="btn btn-primary flex-1">
+                {trSaving ? 'جاري الحفظ...' : 'حفظ'}
+              </button>
+            </div>
           </div>
         </div>
       )}

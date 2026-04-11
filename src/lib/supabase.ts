@@ -83,7 +83,7 @@ export async function deleteCampaign_(id: string) {
 }
 
 // ─── Campaign Media ─────────────────────────────────────────
-export async function updateCampaignMedia(id: string, updates: { fit_mode?: string; object_position?: string }) {
+export async function updateCampaignMedia(id: string, updates: { fit_mode?: string; object_position?: string; transform?: any }) {
   return await db('update', 'campaign_media', updates, id)
 }
 

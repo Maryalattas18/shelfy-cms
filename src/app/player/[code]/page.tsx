@@ -10,6 +10,7 @@ type MediaItem = {
   duration_sec: number
   fit_mode?: string
   object_position?: string
+  transform?: { x: number; y: number; scale: number; rotate: number } | null
 }
 
 type PlayerState = 'loading' | 'error' | 'idle' | 'playing'
@@ -267,29 +268,34 @@ export default function PlayerPage() {
             marginLeft: '-50vh',
           } : {}),
         }}>
-          {current?.file_type === 'image' ? (
-            <img
-              key={`img-${currentIndex}`}
-              src={current.file_url}
-              alt=""
-              style={{ ...S.media, objectFit: (current.fit_mode || fitMode) as any, objectPosition: current.object_position || 'center center' }}
-            />
-          ) : (
-            <video
-              key={`vid-${currentIndex}`}
-              ref={videoRef}
-              src={current?.file_url}
-              autoPlay
-              muted
-              playsInline
-              style={{ ...S.media, objectFit: (current.fit_mode || fitMode) as any, objectPosition: current.object_position || 'center center' }}
-              onEnded={() => advance(currentIndex, playlist, screenId)}
-              onError={() => {
-                if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-                setTimeout(() => advance(currentIndex, playlist, screenId), 500)
-              }}
-            />
-          )}
+          {(() => {
+            const t = current?.transform
+            const mediaStyle: React.CSSProperties = t
+              ? {
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  transform: `translate(calc(-50% + ${t.x}%), calc(-50% + ${t.y}%)) scale(${t.scale}) rotate(${t.rotate}deg)`,
+                  transformOrigin: 'center center',
+                }
+              : { ...S.media, objectFit: (current?.fit_mode || fitMode) as any, objectPosition: current?.object_position || 'center center' }
+
+            return current?.file_type === 'image' ? (
+              <img key={`img-${currentIndex}`} src={current.file_url} alt="" style={mediaStyle} />
+            ) : (
+              <video
+                key={`vid-${currentIndex}`}
+                ref={videoRef}
+                src={current?.file_url}
+                autoPlay muted playsInline
+                style={mediaStyle}
+                onEnded={() => advance(currentIndex, playlist, screenId)}
+                onError={() => {
+                  if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
+                  setTimeout(() => advance(currentIndex, playlist, screenId), 500)
+                }}
+              />
+            )
+          })()}
         </div>
       </div>
 

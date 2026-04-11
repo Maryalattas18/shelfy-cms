@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       campaign:campaigns(
         id, name, status,
         campaign_media(
-          id, order_num, fit_mode, object_position,
+          id, order_num, fit_mode, object_position, transform,
           media(id, file_name, file_url, file_type, duration_sec)
         )
       )
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
             duration_sec: schedule.duration_sec || item.media.duration_sec || 15,
             fit_mode: item.fit_mode || screen.fit_mode || 'cover',
             object_position: item.object_position || 'center center',
+            transform: item.transform || null,
           })
         }
       }
