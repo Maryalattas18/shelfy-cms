@@ -137,6 +137,7 @@ export async function createSchedule(schedule: {
   end_time: string
   days_of_week: string[]
   duration_sec: number
+  weight?: number
 }) {
   return await db('insert', 'schedules', schedule)
 }
