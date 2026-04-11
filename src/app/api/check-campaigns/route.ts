@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendCampaignStartEmail, sendCampaignEndEmail } from '@/lib/email'
+import { sendCampaignLaunchEmail, sendCampaignEndEmail } from '@/lib/email'
+import { generateCampaignPdf } from '@/lib/campaignPdf'
 
 function getSupabase() {
   return createClient(
@@ -17,7 +18,7 @@ export async function GET() {
   // ─── 1. حملات انتهت اليوم ────────────────────
   const { data: ended } = await supabase
     .from('campaigns')
-    .select('id, name, client_id, clients(company_name, phone, email, portal_token)')
+    .select('id, name, start_date, end_date, price, client_id, clients(company_name, phone, email, portal_token)')
     .eq('status', 'active')
     .lte('end_date', today)
 
@@ -30,16 +31,52 @@ export async function GET() {
         ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nنود إعلامكم بأن حملتكم الإعلانية "${c.name}" قد اكتملت بنجاح.\n\nيسعدنا التواصل معكم لمناقشة تجديد الحملة أو إطلاق حملة جديدة.\n\nفريق Shelfy Screens`)
         : null
 
-      // إرسال إيميل تلقائي
       if (client?.email) {
         try {
+          // جلب إحصائيات الحملة
+          const { data: cm } = await supabase.from('campaign_media').select('media_id').eq('campaign_id', c.id)
+          const mediaIds = (cm || []).map((x: any) => x.media_id)
+          let plays = 0, totalSec = 0
+          if (mediaIds.length > 0) {
+            const { data: logs } = await supabase.from('play_logs').select('duration_sec').in('media_id', mediaIds)
+            plays = (logs || []).length
+            totalSec = (logs || []).reduce((s: number, l: any) => s + (l.duration_sec || 0), 0)
+          }
+
+          // جلب الشاشات
+          const { data: schedules } = await supabase.from('schedules').select('screen:screens(name,location_name)').eq('campaign_id', c.id)
+          const screens = (schedules || []).map((s: any) => s.screen).filter(Boolean)
+
+          const hours = parseFloat((totalSec / 3600).toFixed(1))
+          const portalUrl = client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login'
+
+          // توليد PDF
+          const pdfBuffer = await generateCampaignPdf({
+            clientName: client.company_name,
+            campaignName: c.name,
+            startDate: c.start_date,
+            endDate: c.end_date,
+            plays, hours,
+            screensCount: screens.length,
+            screens,
+            mediaCount: mediaIds.length,
+            price: c.price,
+          })
+
           await sendCampaignEndEmail({
             to: client.email,
             clientName: client.company_name,
             campaignName: c.name,
-            portalUrl: client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login',
+            startDate: c.start_date,
+            endDate: c.end_date,
+            plays, hours,
+            screensCount: screens.length,
+            mediaCount: mediaIds.length,
+            portalUrl,
+            pdfBuffer,
+            price: c.price,
           })
-        } catch (e) { console.error('email error', e) }
+        } catch (e) { console.error('end email error', e) }
       }
 
       await supabase.from('notifications').insert({
@@ -51,16 +88,12 @@ export async function GET() {
     }
   }
 
-  // ─── 2. حملات ستبدأ غداً ─────────────────────
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
-
+  // ─── 2. حملات تبدأ اليوم ─────────────────────
   const { data: starting } = await supabase
     .from('campaigns')
-    .select('id, name, client_id, clients(company_name, phone, email, portal_token)')
+    .select('id, name, start_date, end_date, client_id, clients(id, company_name, phone, email, portal_token, portal_password_plain)')
     .eq('status', 'scheduled')
-    .eq('start_date', tomorrowStr)
+    .eq('start_date', today)
 
   if (starting && starting.length > 0) {
     for (const c of starting) {
@@ -68,24 +101,32 @@ export async function GET() {
 
       const client = (c as any).clients
       const waMsg = client?.phone
-        ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nيسعدنا إعلامكم بأن حملتكم الإعلانية "${c.name}" ستبدأ غداً على شاشات Shelfy.\n\nيمكنكم متابعة أداء الحملة من بوابتكم الخاصة.\n\nفريق Shelfy Screens`)
+        ? encodeURIComponent(`مرحباً ${client.company_name}،\n\nيسعدنا إعلامكم بأن حملتكم الإعلانية "${c.name}" بدأت اليوم على شاشات Shelfy.\n\nيمكنكم متابعة أداء الحملة من بوابتكم الخاصة.\n\nفريق Shelfy Screens`)
         : null
 
-      // إرسال إيميل تلقائي
       if (client?.email) {
         try {
-          await sendCampaignStartEmail({
+          // جلب عدد الشاشات
+          const { data: schedules } = await supabase.from('schedules').select('id').eq('campaign_id', c.id)
+          const portalUrl = client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login'
+
+          await sendCampaignLaunchEmail({
             to: client.email,
             clientName: client.company_name,
             campaignName: c.name,
-            portalUrl: client.portal_token ? `https://shelfyscreens.com/portal/${client.portal_token}` : 'https://shelfyscreens.com/portal-login',
+            startDate: c.start_date,
+            endDate: c.end_date,
+            screensCount: (schedules || []).length,
+            portalUrl,
+            email: client.email,
+            password: client.portal_password_plain || '—',
           })
-        } catch (e) { console.error('email error', e) }
+        } catch (e) { console.error('launch email error', e) }
       }
 
       await supabase.from('notifications').insert({
         type: 'campaign_starting',
-        title: `حملة "${c.name}" تبدأ غداً`,
+        title: `حملة "${c.name}" بدأت اليوم`,
         body: `عميل: ${client?.company_name || '—'} · تأكد من رفع المحتوى وجدولة الشاشات`,
         meta: waMsg && client?.phone ? { whatsapp: `https://wa.me/${client.phone.replace(/\D/g,'')}?text=${waMsg}` } : null,
       })
@@ -106,14 +147,11 @@ export async function GET() {
   if (expiring && expiring.length > 0) {
     for (const c of expiring) {
       const client = (c as any).clients
-      // تحقق إذا أُرسل تذكير لهذه الحملة اليوم
       const { data: existing } = await supabase
-        .from('notifications')
-        .select('id')
+        .from('notifications').select('id')
         .eq('type', 'campaign_expiring')
         .ilike('title', `%${c.name}%`)
-        .gte('created_at', today)
-        .single()
+        .gte('created_at', today).single()
 
       if (!existing) {
         await supabase.from('notifications').insert({

@@ -29,6 +29,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
   const [pwEmail, setPwEmail] = useState('')
   const [newPw, setNewPw] = useState('')
   const [pwSaving, setPwSaving] = useState(false)
+  const [showPw, setShowPw] = useState(false)
   const [aiModal, setAiModal] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState<any>(null)
@@ -110,14 +111,14 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
     setPwModal(true)
   }
 
-  const setPassword = async () => {
+  const setPassword = async (autoGenerate = false) => {
     if (!pwEmail.trim()) return showToast('أدخل البريد الإلكتروني للعميل')
-    if (!newPw || newPw.length < 6) return showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+    if (!autoGenerate && (!newPw || newPw.length < 6)) return showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
     setPwSaving(true)
     const res = await fetch('/api/auth/set-client-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: params.id, password: newPw, email: pwEmail.trim() }),
+      body: JSON.stringify({ clientId: params.id, password: newPw, email: pwEmail.trim(), autoGenerate }),
     })
     const json = await res.json()
     setPwSaving(false)
@@ -125,7 +126,7 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
       setPwModal(false)
       setNewPw('')
       await load()
-      showToast('تم تعيين بيانات الدخول')
+      showToast(autoGenerate ? `تم توليد كلمة المرور: ${json.password}` : 'تم تعيين بيانات الدخول')
     } else {
       showToast(json.error || 'حدث خطأ — حاول مرة ثانية')
     }
@@ -180,6 +181,22 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
               <h3 className="font-bold text-gray-900">بيانات دخول العميل</h3>
               <button onClick={() => setPwModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
+
+            {/* الباسوورد الحالي */}
+            {client.portal_password_plain && (
+              <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+                <p style={{ fontSize: 11, color: '#3b82f6', fontWeight: 600, marginBottom: 4 }}>كلمة المرور الحالية</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 15, color: '#111', letterSpacing: '0.1em', flex: 1 }}>
+                    {showPw ? client.portal_password_plain : '••••••••••'}
+                  </span>
+                  <button onClick={() => setShowPw(v => !v)} style={{ fontSize: 11, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    {showPw ? 'إخفاء' : 'إظهار'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-gray-500 mb-4">
               سيستخدم <strong>{client.company_name}</strong> هذه البيانات لتسجيل الدخول لبوابته على{' '}
               <span className="text-blue-500">shelfyscreens.com</span>
@@ -194,24 +211,30 @@ export default function ClientDetailPage({ params }: { params: { id: string } })
                 dir="ltr"
               />
             </div>
-            <div className="mb-5">
-              <label className="label">كلمة المرور</label>
+            <div className="mb-3">
+              <label className="label">كلمة المرور الجديدة</label>
               <input
                 type="text"
                 className="input"
                 value={newPw}
                 onChange={e => setNewPw(e.target.value)}
-                placeholder="اكتب كلمة المرور"
+                placeholder="اكتب كلمة المرور أو اتركها فارغة للتوليد"
                 autoComplete="off"
               />
-              <p className="text-xs text-gray-400 mt-1">6 أحرف على الأقل — ستظهر للعميل كما هي</p>
+              <p className="text-xs text-gray-400 mt-1">6 أحرف على الأقل</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-2">
               <button className="btn btn-secondary flex-1" onClick={() => setPwModal(false)}>إلغاء</button>
-              <button className="btn btn-primary flex-1" onClick={setPassword} disabled={pwSaving}>
-                {pwSaving ? 'جاري الحفظ...' : 'حفظ بيانات الدخول'}
+              <button className="btn btn-primary flex-1" onClick={() => setPassword(false)} disabled={pwSaving}>
+                {pwSaving ? 'جاري الحفظ...' : 'حفظ'}
               </button>
             </div>
+            <button
+              onClick={() => setPassword(true)} disabled={pwSaving}
+              style={{ width: '100%', padding: '9px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, color: '#16a34a', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Cairo, sans-serif' }}
+            >
+              ✨ توليد كلمة مرور تلقائياً
+            </button>
           </div>
         </div>
       )}
