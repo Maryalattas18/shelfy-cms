@@ -178,8 +178,13 @@ export default function PlayerPage() {
       mediaTimerRef.current = setTimeout(() => {
         advance(currentIndex, playlist, screenId)
       }, current.duration_sec * 1000)
+    } else {
+      // للفيديو: timeout احتياطي لو ما اشتغل خلال 8 ثواني
+      if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
+      mediaTimerRef.current = setTimeout(() => {
+        advance(currentIndex, playlist, screenId)
+      }, (current.duration_sec || 30) * 1000 + 8000)
     }
-    // للفيديو: يتقدم عبر onEnded
 
     return () => {
       if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
@@ -288,6 +293,10 @@ export default function PlayerPage() {
                 src={current?.file_url}
                 autoPlay muted playsInline
                 style={mediaStyle}
+                onCanPlay={() => {
+                  // الفيديو اشتغل — ألغِ الـ timeout الاحتياطي واتركه ينهي طبيعياً
+                  if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
+                }}
                 onEnded={() => advance(currentIndex, playlist, screenId)}
                 onError={() => {
                   if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
