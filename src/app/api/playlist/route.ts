@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     .select(`
       *,
       campaign:campaigns(
-        id, name, status, priority,
+        id, name, status, priority, created_at,
         campaign_media(
           id, order_num, fit_mode, object_position, transform,
           media(id, file_name, file_url, file_type, duration_sec)
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     .gte('end_time', currentTime)
 
   // جمع الحملات النشطة مع إعلاناتها وأوزانها
-  type CampEntry = { items: any[]; weight: number; priority: string }
+  type CampEntry = { items: any[]; weight: number; priority: string; createdAt: string }
   const campEntries: CampEntry[] = []
 
   if (schedules && schedules.length > 0) {
@@ -68,14 +68,18 @@ export async function GET(req: NextRequest) {
           transform: item.transform || null,
         }))
       if (items.length > 0) {
-        campEntries.push({ items, weight: schedule.weight ?? 100, priority: campaign.priority || 'normal' })
+        campEntries.push({ items, weight: schedule.weight ?? 100, priority: campaign.priority || 'normal', createdAt: campaign.created_at || '' })
       }
     }
   }
 
   // ترتيب حسب الأولوية
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2 }
-  campEntries.sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2))
+  campEntries.sort((a, b) => {
+    const pDiff = (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2)
+    if (pDiff !== 0) return pDiff
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  })
 
   // توزيع النسب — خوارزمية Bresenham للتوزيع المتوازن
   let playlist: any[] = []
