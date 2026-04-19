@@ -323,7 +323,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
 
   // الشاشات الفريدة من الجداول
   const uniqueScreens = Array.from(
-    new Map(schedules.map((s: any) => [s.screen?.id, s.screen]).filter(([id]) => id)).values()
+    new Map(
+      schedules
+        .map((s: any) => [s.screen?.id, s.screen] as [string, any])
+        .filter(([id]) => id)
+    ).values()
   )
 
   return (
