@@ -36,23 +36,46 @@ export default function PlayerPage() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mediaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const keepAliveVideoRef = useRef<HTMLVideoElement>(null)
   const wakeLockRef = useRef<any>(null)
 
-  // ─── Wake Lock (منع الشاشة من النوم) ─────────────────
+  // ─── Wake Lock + Keep-Alive (منع الشاشة من النوم) ────
   useEffect(() => {
     const requestWakeLock = async () => {
       try {
         if ('wakeLock' in navigator) {
+          if (wakeLockRef.current) {
+            try { await wakeLockRef.current.release() } catch {}
+          }
           wakeLockRef.current = await (navigator as any).wakeLock.request('screen')
         }
       } catch {}
     }
+
     requestWakeLock()
+
+    // أعد طلب Wake Lock كل دقيقتين (بعض الأجهزة تُلغيه)
+    const wakeLockInterval = setInterval(requestWakeLock, 120_000)
+
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') requestWakeLock()
     }
     document.addEventListener('visibilitychange', handleVisibility)
+
+    // keep-alive: حرّك pixel مخفي كل 30 ثانية يخدع الجهاز
+    const keepAliveInterval = setInterval(() => {
+      const el = keepAliveVideoRef.current
+      if (el) {
+        el.play().catch(() => {})
+      }
+      // أضف حركة CSS بسيطة جداً تمنع screensaver
+      document.documentElement.style.opacity = '0.9999'
+      requestAnimationFrame(() => { document.documentElement.style.opacity = '1' })
+    }, 30_000)
+
     return () => {
+      clearInterval(wakeLockInterval)
+      clearInterval(keepAliveInterval)
       document.removeEventListener('visibilitychange', handleVisibility)
       wakeLockRef.current?.release()
     }
@@ -338,10 +361,21 @@ export default function PlayerPage() {
         </div>
       )}
 
+      {/* فيديو مخفي يمنع الشاشة من النوم */}
+      <video
+        ref={keepAliveVideoRef}
+        src={KEEP_ALIVE_VIDEO}
+        loop autoPlay muted playsInline
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', left: -9999 }}
+      />
+
       <style>{SPIN_CSS}</style>
     </div>
   )
 }
+
+// فيديو صامت 1×1 بيكسل مشفّر كـ base64 (يمنع النوم على Android)
+const KEEP_ALIVE_VIDEO = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAs1tZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1NSByMjkxNyAwYTg0ZDk4IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxOCAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAPWWIhAAv//72rvzLK0cLlS4teMiRe8m6oE0IAAADAAAMB0d8aNKAAAADAAADAAAAAwAAAwAAAwAKAAAAA0AAABQAAA=='
 
 // ─── Styles ───────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
