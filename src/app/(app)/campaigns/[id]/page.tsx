@@ -699,27 +699,46 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               )}
               <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 10, padding: '2px 8px', borderRadius: 4 }}>اسحب لتحريك الصورة</div>
             </div>
+            {/* أزرار سريعة */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+              {[
+                { label: '↕ عمودي', rotate: 90, scale: tr.scale },
+                { label: '↔ أفقي',  rotate: 0,  scale: tr.scale },
+              ].map(p => (
+                <button key={p.label} onClick={() => setTr(t => ({ ...t, rotate: p.rotate }))}
+                  style={{
+                    flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                    border: `1px solid ${tr.rotate === p.rotate ? '#378ADD' : '#e5e7eb'}`,
+                    background: tr.rotate === p.rotate ? '#e6f1fb' : '#f9f9f7',
+                    color: tr.rotate === p.rotate ? '#378ADD' : '#666',
+                    fontWeight: tr.rotate === p.rotate ? 600 : 400,
+                  }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: '#555' }}>تكبير / قص الأطراف</span>
-                <span style={{ fontSize: 12, color: '#378ADD', fontWeight: 600 }}>{tr.scale.toFixed(1)}x</span>
+                <span style={{ fontSize: 12, color: '#555' }}>الحجم (تصغير / تكبير)</span>
+                <span style={{ fontSize: 12, color: '#378ADD', fontWeight: 600 }}>{tr.scale.toFixed(2)}x</span>
               </div>
-              <input type="range" min="1" max="4" step="0.05" value={tr.scale} onChange={e => setTr(t => ({ ...t, scale: parseFloat(e.target.value) }))} style={{ width: '100%', accentColor: '#378ADD' }} />
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: '#555' }}>تدوير</span>
-                <span style={{ fontSize: 12, color: '#378ADD', fontWeight: 600 }}>{tr.rotate}°</span>
-              </div>
-              <input type="range" min="-180" max="180" step="1" value={tr.rotate} onChange={e => setTr(t => ({ ...t, rotate: parseInt(e.target.value) }))} style={{ width: '100%', accentColor: '#378ADD' }} />
+              <input type="range" min="0.2" max="4" step="0.05" value={tr.scale} onChange={e => setTr(t => ({ ...t, scale: parseFloat(e.target.value) }))} style={{ width: '100%', accentColor: '#378ADD' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                {[-90, -45, 0, 45, 90].map(deg => (
-                  <button key={deg} onClick={() => setTr(t => ({ ...t, rotate: deg }))}
-                    style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid #e5e7eb', background: tr.rotate === deg ? '#e6f1fb' : '#f9f9f7', color: tr.rotate === deg ? '#378ADD' : '#888', cursor: 'pointer' }}>
-                    {deg}°
+                {[0.3, 0.5, 0.75, 1, 2].map(s => (
+                  <button key={s} onClick={() => setTr(t => ({ ...t, scale: s }))}
+                    style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid #e5e7eb', background: tr.scale === s ? '#e6f1fb' : '#f9f9f7', color: tr.scale === s ? '#378ADD' : '#888', cursor: 'pointer' }}>
+                    {s}x
                   </button>
                 ))}
               </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 12, color: '#555' }}>تدوير دقيق</span>
+                <span style={{ fontSize: 12, color: '#378ADD', fontWeight: 600 }}>{tr.rotate}°</span>
+              </div>
+              <input type="range" min="-180" max="180" step="1" value={tr.rotate} onChange={e => setTr(t => ({ ...t, rotate: parseInt(e.target.value) }))} style={{ width: '100%', accentColor: '#378ADD' }} />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setTr({ x: 0, y: 0, scale: 1, rotate: 0 })} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9f9f7', color: '#888', fontSize: 13, cursor: 'pointer' }}>إعادة تعيين</button>
