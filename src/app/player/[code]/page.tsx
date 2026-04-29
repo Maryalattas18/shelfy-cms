@@ -35,10 +35,32 @@ export default function PlayerPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const keepAliveVideoRef = useRef<HTMLVideoElement>(null)
   const wakeLockRef = useRef<any>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const oscillatorRef = useRef<OscillatorNode | null>(null)
   const prevIndexRef = useRef(-1)
   const transitioningRef = useRef(false)
   const playlistRef = useRef<MediaItem[]>([])
   const screenIdRef = useRef('')
+
+  // ─── Web Audio silent oscillator (keep-alive عبر audio output) ────
+  // webOS Hub أحياناً يحس بالـaudio output كـ"إشارة نشطة" ولا ينام
+  const initAudioKeepAlive = () => {
+    if (audioCtxRef.current) return
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext
+      if (!Ctx) return
+      const ctx: AudioContext = new Ctx()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      gain.gain.value = 0.0001 // عملياً صامت لكن audio stream موجود
+      osc.frequency.value = 20  // تردد منخفض جداً (تحت مدى السمع)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start()
+      audioCtxRef.current = ctx
+      oscillatorRef.current = osc
+    } catch {}
+  }
 
   // ─── Wake Lock + Keep-Alive (منع الشاشة من النوم) ────
   // مُحسَّن خصيصاً لتلفزيونات webOS Hub (PRIME / LG)
@@ -251,8 +273,22 @@ export default function PlayerPage() {
   // ─── Fullscreen ──────────────────────────────────────
   const enterFullscreen = () => {
     const el = document.documentElement
+    initAudioKeepAlive()
     if (el.requestFullscreen) el.requestFullscreen().then(() => setFullscreen(true)).catch(() => {})
   }
+
+  // ─── Auto-init audio keep-alive on first interaction ─
+  useEffect(() => {
+    const handler = () => initAudioKeepAlive()
+    document.addEventListener('click', handler, { once: false })
+    document.addEventListener('touchstart', handler, { once: false })
+    document.addEventListener('keydown', handler, { once: false })
+    return () => {
+      document.removeEventListener('click', handler)
+      document.removeEventListener('touchstart', handler)
+      document.removeEventListener('keydown', handler)
+    }
+  }, [])
 
   useEffect(() => {
     const onChange = () => setFullscreen(!!document.fullscreenElement)
@@ -426,6 +462,21 @@ export default function PlayerPage() {
         }}
       >0</div>
 
+      {/* شريط متحرك شفاف يعبر الشاشة باستمرار — حركة بصرية واضحة لـwebOS */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          width: '100vw',
+          height: 2,
+          background: 'rgba(255,255,255,0.025)',
+          pointerEvents: 'none',
+          animation: 'scanLine 8s linear infinite',
+          zIndex: 99,
+          willChange: 'transform',
+        }}
+      />
+
       <style>{SPIN_CSS + KEEP_AWAKE_CSS}</style>
     </div>
   )
@@ -531,10 +582,14 @@ const SPIN_CSS = `
 
 const KEEP_AWAKE_CSS = `
   @keyframes keepAwake {
-    0%   { transform: translate(0px, 0px); }
-    25%  { transform: translate(1px, 0px); }
-    50%  { transform: translate(1px, 1px); }
-    75%  { transform: translate(0px, 1px); }
-    100% { transform: translate(0px, 0px); }
+    0%   { transform: translate(0px, 0px) scale(1); }
+    25%  { transform: translate(2px, 0px) scale(1.2); }
+    50%  { transform: translate(2px, 2px) scale(1); }
+    75%  { transform: translate(0px, 2px) scale(0.8); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  @keyframes scanLine {
+    0%   { top: 100%; }
+    100% { top: 0%; }
   }
 `
