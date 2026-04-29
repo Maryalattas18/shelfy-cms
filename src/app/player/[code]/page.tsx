@@ -21,7 +21,6 @@ export default function PlayerPage() {
 
   const [playlist, setPlaylist] = useState<MediaItem[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [nextIndex, setNextIndex] = useState(1)
   const [playerState, setPlayerState] = useState<PlayerState>('loading')
   const [errorMsg, setErrorMsg] = useState('')
   const [screenId, setScreenId] = useState('')
@@ -33,13 +32,16 @@ export default function PlayerPage() {
   const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape')
   const [fitMode, setFitMode] = useState<'cover' | 'contain' | 'fill'>('cover')
 
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const mediaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const keepAliveVideoRef = useRef<HTMLVideoElement>(null)
   const wakeLockRef = useRef<any>(null)
+  const prevIndexRef = useRef(-1)
+  const transitioningRef = useRef(false)
+  const playlistRef = useRef<MediaItem[]>([])
+  const screenIdRef = useRef('')
 
   // ─── Wake Lock + Keep-Alive (منع الشاشة من النوم) ────
+  // مُحسَّن خصيصاً لتلفزيونات webOS Hub (PRIME / LG)
   useEffect(() => {
     const requestWakeLock = async () => {
       try {
@@ -54,28 +56,58 @@ export default function PlayerPage() {
 
     requestWakeLock()
 
-    // أعد طلب Wake Lock كل دقيقتين (بعض الأجهزة تُلغيه)
-    const wakeLockInterval = setInterval(requestWakeLock, 120_000)
+    // أعد طلب Wake Lock كل 30 ثانية
+    const wakeLockInterval = setInterval(requestWakeLock, 30_000)
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') requestWakeLock()
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
-    // keep-alive: حرّك pixel مخفي كل 30 ثانية يخدع الجهاز
+    // keep-alive video: تأكد إنه يلعب باستمرار + حركة CSS
     const keepAliveInterval = setInterval(() => {
       const el = keepAliveVideoRef.current
       if (el) {
         el.play().catch(() => {})
+        // إذا الفيديو توقف لأي سبب، أعد تحميله
+        if (el.paused || el.ended) {
+          el.currentTime = 0
+          el.play().catch(() => {})
+        }
       }
-      // أضف حركة CSS بسيطة جداً تمنع screensaver
       document.documentElement.style.opacity = '0.9999'
       requestAnimationFrame(() => { document.documentElement.style.opacity = '1' })
-    }, 30_000)
+    }, 15_000)
+
+    // محاكاة نشاط مستخدم كل 15ث (يخدع نظام كشف عدم النشاط في webOS Hub)
+    const fakeActivityInterval = setInterval(() => {
+      try {
+        const x = Math.floor(Math.random() * window.innerWidth)
+        const y = Math.floor(Math.random() * window.innerHeight)
+        document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: x, clientY: y }))
+        document.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, clientX: x, clientY: y }))
+        window.dispatchEvent(new Event('focus'))
+        document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Shift', code: 'ShiftLeft' }))
+        document.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Shift', code: 'ShiftLeft' }))
+      } catch {}
+    }, 15_000)
+
+    // DOM mutation + reflow كل 5ث (يجبر التلفزيون يحس بتغير على الشاشة)
+    const mutationInterval = setInterval(() => {
+      const marker = document.getElementById('keepalive-marker')
+      if (marker) {
+        marker.textContent = String(Date.now() % 1000)
+        marker.style.transform = `translateX(${Math.random().toFixed(3)}px) translateY(${Math.random().toFixed(3)}px)`
+      }
+      // force layout reflow
+      void document.body.offsetHeight
+    }, 5_000)
 
     return () => {
       clearInterval(wakeLockInterval)
       clearInterval(keepAliveInterval)
+      clearInterval(fakeActivityInterval)
+      clearInterval(mutationInterval)
       document.removeEventListener('visibilitychange', handleVisibility)
       wakeLockRef.current?.release()
     }
@@ -141,6 +173,10 @@ export default function PlayerPage() {
     return () => clearInterval(interval)
   }, [fetchPlaylist, retryCount])
 
+  // ─── Keep refs in sync ───────────────────────────────
+  useEffect(() => { playlistRef.current = playlist }, [playlist])
+  useEffect(() => { screenIdRef.current = screenId }, [screenId])
+
   // ─── Preload Next Image ──────────────────────────────
   useEffect(() => {
     if (playlist.length <= 1) return
@@ -151,69 +187,66 @@ export default function PlayerPage() {
     }
   }, [currentIndex, playlist])
 
-  // ─── Progress Bar ────────────────────────────────────
-  const startProgress = useCallback((durationSec: number) => {
-    if (progressRef.current) clearInterval(progressRef.current)
-    setProgress(0)
-    const steps = 100
-    const interval = (durationSec * 1000) / steps
-    let step = 0
-    progressRef.current = setInterval(() => {
-      step++
-      setProgress((step / steps) * 100)
-      if (step >= steps && progressRef.current) clearInterval(progressRef.current)
-    }, interval)
+  // ─── Time-based index calculation ────────────────────
+  // نفس الخوارزمية المستخدمة في /api/screen-now لضمان التزامن
+  const calcIndex = useCallback((pl: MediaItem[]): { index: number; progress: number } => {
+    if (!pl.length) return { index: 0, progress: 0 }
+    const totalMs = pl.reduce((s, it) => s + it.duration_sec * 1000, 0)
+    if (!totalMs) return { index: 0, progress: 0 }
+    const nowMs = Date.now()
+    const saudiMs = nowMs + 3 * 3600000
+    const dayMs = Math.floor(saudiMs / 86400000) * 86400000
+    const midnightUtc = dayMs - 3 * 3600000
+    const pos = (nowMs - midnightUtc) % totalMs
+    let acc = 0
+    for (let i = 0; i < pl.length; i++) {
+      const dur = pl[i].duration_sec * 1000
+      if (pos < acc + dur) return { index: i, progress: ((pos - acc) / dur) * 100 }
+      acc += dur
+    }
+    return { index: 0, progress: 0 }
   }, [])
 
-  // ─── Advance to Next Slide ───────────────────────────
-  const advance = useCallback(async (fromIndex: number, pl: MediaItem[], sid: string) => {
-    const current = pl[fromIndex]
-    if (!current || !sid) return
-
-    // سجّل العرض
-    fetch('/api/log-play', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ screenId: sid, mediaId: current.id, duration: current.duration_sec })
-    }).catch(() => {})
-
-    // انتقال سلس
-    setTransitioning(true)
-    setTimeout(() => {
-      setCurrentIndex(i => {
-        const next = (i + 1) % pl.length
-        setNextIndex((next + 1) % pl.length)
-        return next
-      })
-      setTransitioning(false)
-    }, 400)
-  }, [])
-
-  // ─── Media Timer ─────────────────────────────────────
+  // ─── Tick: sync index with time ──────────────────────
   useEffect(() => {
-    if (playerState !== 'playing' || playlist.length === 0) return
-    const current = playlist[currentIndex]
-    if (!current) return
+    if (playerState !== 'playing') return
 
-    if (current.file_type === 'image') {
-      startProgress(current.duration_sec)
-      if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-      mediaTimerRef.current = setTimeout(() => {
-        advance(currentIndex, playlist, screenId)
-      }, current.duration_sec * 1000)
-    } else {
-      // للفيديو: timeout احتياطي لو ما اشتغل خلال 8 ثواني
-      if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-      mediaTimerRef.current = setTimeout(() => {
-        advance(currentIndex, playlist, screenId)
-      }, (current.duration_sec || 30) * 1000 + 8000)
+    const tick = () => {
+      const pl = playlistRef.current
+      if (!pl.length) return
+      const { index, progress } = calcIndex(pl)
+      setProgress(progress)
+
+      if (index !== prevIndexRef.current) {
+        // سجّل انتهاء العنصر السابق
+        if (prevIndexRef.current !== -1 && screenIdRef.current) {
+          const prev = pl[prevIndexRef.current]
+          if (prev) {
+            fetch('/api/log-play', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ screenId: screenIdRef.current, mediaId: prev.id, duration: prev.duration_sec })
+            }).catch(() => {})
+          }
+        }
+        // انتقال سلس
+        if (!transitioningRef.current) {
+          transitioningRef.current = true
+          setTransitioning(true)
+          setTimeout(() => {
+            setCurrentIndex(index)
+            setTransitioning(false)
+            transitioningRef.current = false
+          }, 400)
+        }
+        prevIndexRef.current = index
+      }
     }
 
-    return () => {
-      if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-      if (progressRef.current) clearInterval(progressRef.current)
-    }
-  }, [currentIndex, playerState, playlist, screenId, advance, startProgress])
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [playerState, calcIndex])
 
   // ─── Fullscreen ──────────────────────────────────────
   const enterFullscreen = () => {
@@ -316,15 +349,9 @@ export default function PlayerPage() {
                 src={current?.file_url}
                 autoPlay muted playsInline
                 style={mediaStyle}
-                onCanPlay={() => {
-                  // الفيديو اشتغل — ألغِ الـ timeout الاحتياطي واتركه ينهي طبيعياً
-                  if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-                }}
-                onEnded={() => advance(currentIndex, playlist, screenId)}
-                onError={() => {
-                  if (mediaTimerRef.current) clearTimeout(mediaTimerRef.current)
-                  setTimeout(() => advance(currentIndex, playlist, screenId), 500)
-                }}
+                onCanPlay={() => {}}
+                onEnded={() => {}}
+                onError={() => {}}
               />
             )
           })()}
@@ -361,15 +388,45 @@ export default function PlayerPage() {
         </div>
       )}
 
-      {/* فيديو مخفي يمنع الشاشة من النوم */}
+      {/* فيديو keep-alive — مرئي صغير في زاوية الشاشة (webOS Hub لازمه يكون داخل viewport) */}
       <video
         ref={keepAliveVideoRef}
         src={KEEP_ALIVE_VIDEO}
         loop autoPlay muted playsInline
-        style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', left: -9999 }}
+        style={{
+          position: 'absolute',
+          bottom: 2,
+          right: 2,
+          width: 4,
+          height: 4,
+          opacity: 0.02,
+          pointerEvents: 'none',
+          zIndex: 100,
+        }}
       />
 
-      <style>{SPIN_CSS}</style>
+      {/* عنصر متحرك يتغير محتواه + موضعه باستمرار — webOS يحسه نشاط */}
+      <div
+        id="keepalive-marker"
+        style={{
+          position: 'absolute',
+          bottom: 1,
+          right: 8,
+          width: 3,
+          height: 3,
+          opacity: 0.05,
+          pointerEvents: 'none',
+          animation: 'keepAwake 2s linear infinite',
+          background: '#fff',
+          borderRadius: '50%',
+          color: 'transparent',
+          fontSize: 1,
+          zIndex: 100,
+          willChange: 'transform',
+        }}
+      >0</div>
+
+      <style>{SPIN_CSS + KEEP_AWAKE_CSS}</style>
     </div>
   )
 }
@@ -470,4 +527,14 @@ const S: Record<string, React.CSSProperties> = {
 const SPIN_CSS = `
   @keyframes spin { to { transform: rotate(360deg) } }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(0.9)} }
+`
+
+const KEEP_AWAKE_CSS = `
+  @keyframes keepAwake {
+    0%   { transform: translate(0px, 0px); }
+    25%  { transform: translate(1px, 0px); }
+    50%  { transform: translate(1px, 1px); }
+    75%  { transform: translate(0px, 1px); }
+    100% { transform: translate(0px, 0px); }
+  }
 `
