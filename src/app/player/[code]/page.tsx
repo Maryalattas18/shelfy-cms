@@ -462,20 +462,6 @@ export default function PlayerPage() {
         }}
       >0</div>
 
-      {/* شريط متحرك شفاف يعبر الشاشة باستمرار — حركة بصرية واضحة لـwebOS */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          width: '100vw',
-          height: 2,
-          background: 'rgba(255,255,255,0.025)',
-          pointerEvents: 'none',
-          animation: 'scanLine 8s linear infinite',
-          zIndex: 99,
-          willChange: 'transform',
-        }}
-      />
 
       <style>{SPIN_CSS + KEEP_AWAKE_CSS}</style>
     </div>
