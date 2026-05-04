@@ -177,7 +177,11 @@ export default function PlayerPage() {
   // ─── Fetch Playlist ──────────────────────────────────
   const fetchPlaylist = useCallback(async () => {
     try {
-      const res = await fetch(`/api/playlist?code=${pairCode}`)
+      // cache-busting + no-cache headers لمنع Fully Kiosk من كاش الـAPI
+      const res = await fetch(`/api/playlist?code=${pairCode}&t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+      })
       const data = await res.json()
       if (data.error) {
         // خطأ من السيرفر (مو شبكة) — نعرض الخطأ

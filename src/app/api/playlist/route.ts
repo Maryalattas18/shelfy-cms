@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -120,6 +123,7 @@ export async function GET(req: NextRequest) {
     fitMode: screen.fit_mode || 'cover',
     playlist,
     _debug: {
+      _serverTime: Date.now(),
       currentTime,
       today,
       schedulesFound: schedules?.length ?? 0,
@@ -133,6 +137,12 @@ export async function GET(req: NextRequest) {
         dayMatch: s.days_of_week?.includes(today),
         timeMatch: s.start_time <= currentTime && s.end_time >= currentTime,
       }))
+    }
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     }
   })
 }
