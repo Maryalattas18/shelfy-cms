@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { getScreens } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -9,38 +9,75 @@ const statusMap: Record<string, [string, string, string]> = {
   idle:    ['badge-amber', 'خاملة',        'dot-idle'],
 }
 
+// نفس خوارزمية الـplayer + /api/screen-now للتزامن المثالي
+function calcCurrentItem(playlist: any[]): any {
+  if (!playlist?.length) return null
+  const totalMs = playlist.reduce((s: number, it: any) => s + (it.duration_sec || 15) * 1000, 0)
+  if (!totalMs) return playlist[0]
+  const nowMs = Date.now()
+  const saudiMs = nowMs + 3 * 3600000
+  const dayMs = Math.floor(saudiMs / 86400000) * 86400000
+  const midnightUtc = dayMs - 3 * 3600000
+  const pos = (nowMs - midnightUtc) % totalMs
+  let acc = 0
+  for (const item of playlist) {
+    const dur = (item.duration_sec || 15) * 1000
+    if (pos < acc + dur) return item
+    acc += dur
+  }
+  return playlist[0]
+}
+
 export default function ScreensPage() {
   const [screens, setScreens] = useState<any[]>([])
-  const [nowPlaying, setNowPlaying] = useState<Record<string, any>>({})
+  // playlists per screen: { screenId: { playlist: [...] } }
+  const [playlists, setPlaylists] = useState<Record<string, { playlist: any[] }>>({})
+  const [tick, setTick] = useState(0) // يعيد الحساب كل ثانية
   const [loading, setLoading] = useState(true)
 
   const loadScreens = useCallback(async () => {
     const data = await getScreens() as any[]
     setScreens(data)
     setLoading(false)
-    // جلب المحتوى الحالي للشاشات المتصلة
     const onlineIds = data.filter(s => s.status === 'online').map(s => s.id)
     if (onlineIds.length > 0) {
       const res = await fetch(`/api/screen-now?ids=${onlineIds.join(',')}`)
       const json = await res.json()
-      setNowPlaying(json)
+      setPlaylists(json)
     }
   }, [])
 
   // تحميل أولي
   useEffect(() => { loadScreens() }, [loadScreens])
 
-  // تحديث كل 15 ثانية للشاشات المتصلة
+  // جلب الـplaylist كل 30ث (نادراً يتغيّر)
   useEffect(() => {
     const interval = setInterval(async () => {
       const onlineIds = screens.filter(s => s.status === 'online').map(s => s.id)
       if (onlineIds.length === 0) return
       const res = await fetch(`/api/screen-now?ids=${onlineIds.join(',')}`)
       const json = await res.json()
-      setNowPlaying(json)
-    }, 15000)
+      setPlaylists(json)
+    }, 30_000)
     return () => clearInterval(interval)
   }, [screens])
+
+  // tick كل ثانية لإعادة حساب العنصر الحالي محلياً (تزامن مثالي مع التلفزيون)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  // احسب nowPlaying محلياً بنفس خوارزمية التلفزيون
+  const nowPlaying = useMemo(() => {
+    const result: Record<string, any> = {}
+    for (const sid in playlists) {
+      const item = calcCurrentItem(playlists[sid]?.playlist || [])
+      result[sid] = item ? { media: item } : null
+    }
+    return result
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playlists, tick])
 
   return (
     <div>
