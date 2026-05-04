@@ -258,8 +258,17 @@ function NewCampaignForm() {
               {mediaList.map(m => (
                 <div key={m.id} onClick={() => toggleMedia(m.id)}
                   className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${selMedia.includes(m.id) ? 'border-2 border-primary bg-primary-light' : 'border-gray-100 hover:border-gray-300'}`}>
-                  <div className="h-16 bg-gray-50 flex items-center justify-center text-xs text-gray-400">
-                    {m.file_type === 'video' ? `🎬 ${m.duration_sec} ث` : '🖼️ صورة'}
+                  <div className="h-24 bg-gray-50 flex items-center justify-center text-xs text-gray-400 relative overflow-hidden">
+                    {m.file_type === 'video' ? (
+                      <>
+                        <video src={m.file_url} className="w-full h-full object-cover" muted preload="metadata" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">🎬 {m.duration_sec} ث</span>
+                        </div>
+                      </>
+                    ) : (
+                      <img src={m.file_url} alt={m.file_name} className="w-full h-full object-cover" loading="lazy" />
+                    )}
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-medium text-gray-900 truncate">{m.file_name}</p>

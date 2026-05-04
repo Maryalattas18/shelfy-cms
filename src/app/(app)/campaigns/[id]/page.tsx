@@ -59,6 +59,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [schedDays, setSchedDays] = useState<string[]>([])
   const [schedWeight, setSchedWeight] = useState(100)
   const [schedSaving, setSchedSaving] = useState(false)
+  const [sched24h, setSched24h] = useState(false)
 
   // ─── Add Schedule Modal ───
   const [addSchedOpen, setAddSchedOpen] = useState(false)
@@ -70,6 +71,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   const [newSchedDays, setNewSchedDays] = useState<string[]>(['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'])
   const [newSchedWeight, setNewSchedWeight] = useState(100)
   const [addSchedSaving, setAddSchedSaving] = useState(false)
+  const [newSched24h, setNewSched24h] = useState(false)
 
   // ─── Screens Modal ───
   const [screensOpen, setScreensOpen] = useState(false)
@@ -157,8 +159,12 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   // ─── Edit Schedule ───
   const openSchedEdit = (s: any) => {
     setSchedEditId(s.id)
-    setSchedFrom(s.start_time?.substring(0, 5) || '08:00')
-    setSchedTo(s.end_time?.substring(0, 5) || '22:00')
+    const from = s.start_time?.substring(0, 5) || '08:00'
+    const to = s.end_time?.substring(0, 5) || '22:00'
+    const is24 = from === '00:00' && (to === '23:59' || to === '00:00')
+    setSched24h(is24)
+    setSchedFrom(from)
+    setSchedTo(to)
     setSchedDur(String(s.duration_sec || 30))
     setSchedDays((s.days_of_week || []).map((c: string) => Object.entries(DAY_TO_CODE).find(([, v]) => v === c)?.[0] || c))
     setSchedWeight(s.weight ?? 100)
@@ -169,8 +175,8 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     if (schedDays.length === 0) return showToast('يرجى اختيار يوم واحد على الأقل')
     setSchedSaving(true)
     await updateSchedule(schedEditId, {
-      start_time: schedFrom,
-      end_time: schedTo,
+      start_time: sched24h ? '00:00' : schedFrom,
+      end_time: sched24h ? '23:59' : schedTo,
       duration_sec: Number(schedDur) || 30,
       days_of_week: schedDays.map(d => DAY_TO_CODE[d]),
       weight: schedWeight,
@@ -193,6 +199,7 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     const screens = await getScreens() as any[]
     setAllScreens(screens)
     setNewSchedScreen(screens[0]?.id || '')
+    setNewSched24h(false)
     setNewSchedFrom('08:00')
     setNewSchedTo('22:00')
     setNewSchedDur('30')
@@ -208,8 +215,8 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
     await createSchedule({
       campaign_id: params.id,
       screen_id: newSchedScreen,
-      start_time: newSchedFrom,
-      end_time: newSchedTo,
+      start_time: newSched24h ? '00:00' : newSchedFrom,
+      end_time: newSched24h ? '23:59' : newSchedTo,
       days_of_week: newSchedDays.map(d => DAY_TO_CODE[d]),
       duration_sec: Number(newSchedDur) || 30,
       weight: newSchedWeight,
@@ -428,7 +435,11 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-medium text-gray-900">{s.screen?.name || '—'}</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-gray-400 font-mono">{s.start_time?.substring(0, 5)} – {s.end_time?.substring(0, 5)}</span>
+                      <span className="text-gray-400 font-mono">
+                        {s.start_time?.substring(0, 5) === '00:00' && (s.end_time?.substring(0, 5) === '23:59' || s.end_time?.substring(0, 5) === '00:00')
+                          ? 'طوال اليوم'
+                          : `${s.start_time?.substring(0, 5)} – ${s.end_time?.substring(0, 5)}`}
+                      </span>
                       <button onClick={() => openSchedEdit(s)} className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                       </button>
@@ -476,14 +487,20 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
                   </button>
 
                   {/* Thumbnail */}
-                  <div className="h-24 bg-gray-50 flex items-center justify-center relative">
+                  <div className="h-24 bg-gray-50 flex items-center justify-center relative overflow-hidden">
                     {m.media?.file_type === 'image' && m.media?.file_url ? (
                       <img src={m.media.file_url} alt="" className="w-full h-full"
                         style={{ objectFit: fitMode as any, objectPosition: objPos }} />
+                    ) : m.media?.file_type === 'video' && m.media?.file_url ? (
+                      <>
+                        <video src={m.media.file_url} className="w-full h-full object-cover" muted preload="metadata" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">🎬 {m.media?.duration_sec} ث</span>
+                        </div>
+                      </>
                     ) : (
                       <div className="text-center">
-                        <div className="text-2xl">{m.media?.file_type === 'video' ? '🎬' : '🖼️'}</div>
-                        <p className="text-xs text-gray-400">{m.media?.duration_sec} ث</p>
+                        <div className="text-2xl">🖼️</div>
                       </div>
                     )}
                     <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs rounded px-1">{i + 1}</div>
@@ -594,9 +611,21 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div><label className="label">من الساعة</label><input className="input" type="time" value={newSchedFrom} onChange={e => setNewSchedFrom(e.target.value)} /></div>
-              <div><label className="label">إلى الساعة</label><input className="input" type="time" value={newSchedTo} onChange={e => setNewSchedTo(e.target.value)} /></div>
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setNewSched24h(v => !v)}
+                className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg border text-sm font-medium transition-all
+                  ${newSched24h ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                طوال اليوم (٢٤ ساعة)
+                {newSched24h && <span className="text-xs bg-primary text-white rounded-full px-2 py-0.5">مفعّل</span>}
+              </button>
+            </div>
+
+            <div className={`grid grid-cols-2 gap-3 mb-3 transition-opacity ${newSched24h ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div><label className="label">من الساعة</label><input className="input" type="time" value={newSched24h ? '00:00' : newSchedFrom} onChange={e => setNewSchedFrom(e.target.value)} disabled={newSched24h} /></div>
+              <div><label className="label">إلى الساعة</label><input className="input" type="time" value={newSched24h ? '23:59' : newSchedTo} onChange={e => setNewSchedTo(e.target.value)} disabled={newSched24h} /></div>
             </div>
 
             <div className="mb-3">
@@ -646,9 +675,20 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
               <span className="modal-title">تعديل الجدولة</span>
               <button onClick={() => setSchedEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 20 }}>×</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div><label className="label">من الساعة</label><input className="input" type="time" value={schedFrom} onChange={e => setSchedFrom(e.target.value)} /></div>
-              <div><label className="label">إلى الساعة</label><input className="input" type="time" value={schedTo} onChange={e => setSchedTo(e.target.value)} /></div>
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setSched24h(v => !v)}
+                className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg border text-sm font-medium transition-all
+                  ${sched24h ? 'bg-primary-light text-primary border-primary' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                طوال اليوم (٢٤ ساعة)
+                {sched24h && <span className="text-xs bg-primary text-white rounded-full px-2 py-0.5">مفعّل</span>}
+              </button>
+            </div>
+            <div className={`grid grid-cols-2 gap-3 mb-3 transition-opacity ${sched24h ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div><label className="label">من الساعة</label><input className="input" type="time" value={sched24h ? '00:00' : schedFrom} onChange={e => setSchedFrom(e.target.value)} disabled={sched24h} /></div>
+              <div><label className="label">إلى الساعة</label><input className="input" type="time" value={sched24h ? '23:59' : schedTo} onChange={e => setSchedTo(e.target.value)} disabled={sched24h} /></div>
             </div>
             <div className="mb-3">
               <label className="label">مدة كل إعلان (ثانية)</label>
