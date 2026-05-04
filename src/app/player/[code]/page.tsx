@@ -431,11 +431,19 @@ export default function PlayerPage() {
                 key={`vid-${currentIndex}`}
                 ref={videoRef}
                 src={current?.file_url}
-                autoPlay muted playsInline
+                autoPlay muted playsInline loop
                 style={mediaStyle}
-                onCanPlay={() => {}}
-                onEnded={() => {}}
-                onError={() => {}}
+                onEnded={(e) => {
+                  // إذا الفيديو خلص قبل وقته المخصص، يعيد التشغيل تلقائياً (loop)
+                  const v = e.currentTarget
+                  v.currentTime = 0
+                  v.play().catch(() => {})
+                }}
+                onError={(e) => {
+                  // إذا فشل تحميل الفيديو، نحاول إعادة التحميل بعد ثانية
+                  const v = e.currentTarget
+                  setTimeout(() => { v.load(); v.play().catch(() => {}) }, 1000)
+                }}
               />
             )
           })()}
