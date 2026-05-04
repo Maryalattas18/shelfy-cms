@@ -31,6 +31,7 @@ export default function PlayerPage() {
   const [retryCount, setRetryCount] = useState(0)
   const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape')
   const [fitMode, setFitMode] = useState<'cover' | 'contain' | 'fill'>('cover')
+  const [isOffline, setIsOffline] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const keepAliveVideoRef = useRef<HTMLVideoElement>(null)
@@ -149,23 +150,51 @@ export default function PlayerPage() {
     return () => clearInterval(t)
   }, [])
 
+  // ─── Cache Helpers (localStorage) ────────────────────
+  const cacheKey = `shelfy_cache_${pairCode}`
+
+  const saveToCache = (data: any) => {
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({
+        screenId: data.screenId,
+        orientation: data.orientation || 'landscape',
+        fitMode: data.fitMode || 'cover',
+        playlist: data.playlist || [],
+        cachedAt: Date.now(),
+      }))
+    } catch {}
+  }
+
+  const loadFromCache = (): any => {
+    try {
+      const raw = localStorage.getItem(cacheKey)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  }
+
   // ─── Fetch Playlist ──────────────────────────────────
   const fetchPlaylist = useCallback(async () => {
     try {
       const res = await fetch(`/api/playlist?code=${pairCode}`)
       const data = await res.json()
       if (data.error) {
+        // خطأ من السيرفر (مو شبكة) — نعرض الخطأ
         setErrorMsg(data.error)
         setPlayerState('error')
+        setIsOffline(false)
         return
       }
+      // نجح الاتصال — احفظ في الكاش
+      saveToCache(data)
+      setIsOffline(false)
       setScreenId(data.screenId)
       setOrientation(data.orientation || 'landscape')
       setFitMode(data.fitMode || 'cover')
       setRetryCount(0)
       const items: MediaItem[] = data.playlist || []
       setPlaylist(prev => {
-        // حدّث الـ playlist بدون إعادة تشغيل العنصر الحالي
         if (JSON.stringify(prev) !== JSON.stringify(items)) {
           if (items.length === 0) {
             setPlayerState('idle')
@@ -181,7 +210,26 @@ export default function PlayerPage() {
       else setPlayerState('playing')
       setErrorMsg('')
     } catch {
+      // فشل الشبكة — جرّب الكاش بدل ما تعرض شاشة خطأ
       setRetryCount(r => r + 1)
+      setIsOffline(true)
+
+      // إذا عندنا playlist شغالة، خلّيها تكمل بصمت
+      if (playlistRef.current.length > 0) return
+
+      // ما عندنا playlist في الذاكرة — حمّل من localStorage
+      const cached = loadFromCache()
+      if (cached && cached.playlist?.length > 0) {
+        setScreenId(cached.screenId || '')
+        setOrientation(cached.orientation || 'landscape')
+        setFitMode(cached.fitMode || 'cover')
+        setPlaylist(cached.playlist)
+        setPlayerState('playing')
+        setErrorMsg('')
+        return
+      }
+
+      // لا playlist ولا كاش — اعرض شاشة الخطأ
       setPlayerState('error')
       setErrorMsg('انقطع الاتصال بالسيرفر')
     }
@@ -396,8 +444,8 @@ export default function PlayerPage() {
 
       {/* Bottom Bar */}
       <div style={S.bottomBar}>
-        {/* نقطة خضراء صغيرة جداً */}
-        <span style={S.dot} />
+        {/* نقطة الحالة: خضراء = أونلاين، برتقالية = أوفلاين */}
+        <span style={{ ...S.dot, background: isOffline ? '#f59e0b' : '#22c55e', boxShadow: `0 0 4px ${isOffline ? '#f59e0b' : '#22c55e'}` }} />
         {/* مؤشر الإعلانات — خفيف جداً */}
         {playlist.length > 1 && (
           <div style={{ display: 'flex', gap: 2, opacity: 0.18 }}>
